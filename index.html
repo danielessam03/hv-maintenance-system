@@ -917,7 +917,7 @@ const LoginPage = ({ onLogin, onReconfig }) => {
             <p className="text-white/80 leading-relaxed">منصة احترافية لإدارة عمليات الصيانة، التشطيب، المخزون، والمقايسات.</p>
             <div className="mt-6"><span className="live-indicator"><span className="live-dot"></span> متصل بقاعدة البيانات</span></div>
           </div>
-          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.1</div>
+          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.2</div>
         </div>
         <div className="p-8 lg:p-12 flex flex-col justify-center">
           <div className="lg:hidden mb-8"><HVLogo size="md"/></div>
@@ -977,7 +977,7 @@ const Sidebar = ({ user, currentPage, setCurrentPage, onLogout, alertsCount, onR
       <div className="border-t pt-4 mt-4" style={{borderColor:'var(--hv-line)'}}>
         <div className="mb-3">
           <div className="text-[10px] font-bold tracking-wider mb-1 mr-1" style={{color:'var(--hv-muted)'}}>الأنظمة الأخرى</div>
-          <a href="https://home-vacation-hr.homevacation1950.workers.dev" target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>👥 <span className="flex-1">الموارد البشرية والرواتب</span></a>
+          <a href="https://home-vacation-hr.pages.dev" target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>👥 <span className="flex-1">الموارد البشرية والرواتب</span></a>
           <a href="https://property-management-crm.pages.dev" target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>🏠 <span className="flex-1">إدارة العقارات (CRM)</span></a>
         </div>
         <div className="flex items-center gap-3 p-3 rounded-xl mb-2" style={{background:'var(--hv-cream)'}}>
@@ -1033,7 +1033,7 @@ const MobileDrawer = ({ user, currentPage, setCurrentPage, onLogout, alertsCount
         <div className="border-t pt-4 mt-4" style={{borderColor:'var(--hv-line)'}}>
           <div className="mb-3">
           <div className="text-[10px] font-bold tracking-wider mb-1 mr-1" style={{color:'var(--hv-muted)'}}>الأنظمة الأخرى</div>
-          <a href="https://home-vacation-hr.homevacation1950.workers.dev" target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>👥 <span className="flex-1">الموارد البشرية والرواتب</span></a>
+          <a href="https://home-vacation-hr.pages.dev" target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>👥 <span className="flex-1">الموارد البشرية والرواتب</span></a>
           <a href="https://property-management-crm.pages.dev" target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>🏠 <span className="flex-1">إدارة العقارات (CRM)</span></a>
         </div>
         <div className="flex items-center gap-3 p-3 rounded-xl mb-2" style={{background:'var(--hv-cream)'}}>
@@ -3390,7 +3390,7 @@ const CredentialsPage = ({ data, currentUser, showToast }) => {
     <div className="p-8 max-w-5xl mx-auto">
       <PageHeader title="بيانات الدخول" subtitle="بيانات اعتماد جميع المستخدمين"
         action={
-          <a href="https://home-vacation-hr.homevacation1950.workers.dev" target="_blank" rel="noreferrer" className="btn-ghost px-4 py-2 rounded-xl font-bold flex items-center gap-2" style={{textDecoration:'none'}}>👥 إدارة الحسابات من الموارد البشرية</a>
+          <a href="https://home-vacation-hr.pages.dev" target="_blank" rel="noreferrer" className="btn-ghost px-4 py-2 rounded-xl font-bold flex items-center gap-2" style={{textDecoration:'none'}}>👥 إدارة الحسابات من الموارد البشرية</a>
         }/>
       <div className="p-4 rounded-xl mb-6 flex items-start gap-3" style={{background:'rgba(212,168,90,0.10)'}}>
         <Icon name="alert" size={18} style={{color:'var(--hv-gold-dark)'}}/>
@@ -3819,7 +3819,7 @@ const UsersSettings = ({ data, currentUser, onCreate, onUpdate, onDelete, showTo
     <div>
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-display font-bold text-lg">المستخدمون ({data.users.length})</h3>
-        <a href="https://home-vacation-hr.homevacation1950.workers.dev" target="_blank" rel="noreferrer" className="btn-primary px-4 py-2 rounded-xl font-bold flex items-center gap-2" style={{textDecoration:'none'}}><Icon name="plus" size={14}/>جديد (من الموارد البشرية)</a>
+        <a href="https://home-vacation-hr.pages.dev" target="_blank" rel="noreferrer" className="btn-primary px-4 py-2 rounded-xl font-bold flex items-center gap-2" style={{textDecoration:'none'}}><Icon name="plus" size={14}/>جديد (من الموارد البشرية)</a>
       </div>
       {creating && <Form onSave={async(d)=>{const ok=await onCreate(d);if(ok){setCreating(false);showToast('تم');}}} onCancel={()=>setCreating(false)}/>}
       <div className="space-y-2">
