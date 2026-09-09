@@ -917,7 +917,7 @@ const LoginPage = ({ onLogin, onReconfig }) => {
             <p className="text-white/80 leading-relaxed">منصة احترافية لإدارة عمليات الصيانة، التشطيب، المخزون، والمقايسات.</p>
             <div className="mt-6"><span className="live-indicator"><span className="live-dot"></span> متصل بقاعدة البيانات</span></div>
           </div>
-          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.2</div>
+          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.3</div>
         </div>
         <div className="p-8 lg:p-12 flex flex-col justify-center">
           <div className="lg:hidden mb-8"><HVLogo size="md"/></div>
@@ -2180,7 +2180,7 @@ const AllTasksPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadA
     }
     return true;
   }).sort((a,b)=>new Date(getTaskStartDate(b))-new Date(getTaskStartDate(a))), [data, filterStatus, filterEmployee, searchQuery, filterDateFrom, filterDateTo, mode, currentUser]);
-  const assignableForFilter = data.users.filter(u => u.role !== 'ceo');
+  const assignableForFilter = data.users.filter(u => u.role !== 'ceo' && u.is_active !== false);
   
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -2981,7 +2981,7 @@ const KPIPage = ({ data, currentUser }) => {
       if (ids.length > 0 && ids.every(id => ceoIds.includes(id))) return false;
       return true;
     });
-    const employees = data.users.filter(u => u.role !== 'ceo');
+    const employees = data.users.filter(u => u.role !== 'ceo' && u.is_active !== false);
     
     // Per-employee KPIs
     const empStats = employees.map(emp => {
@@ -3035,7 +3035,7 @@ const KPIPage = ({ data, currentUser }) => {
   }, [data, period, customFrom, customTo, useCustom]);
   
   const filteredEmpStats = selectedEmployee === 'all' ? stats.empStats : stats.empStats.filter(s => s.emp.id === parseInt(selectedEmployee));
-  const employees = data.users.filter(u => u.role !== 'ceo');
+  const employees = data.users.filter(u => u.role !== 'ceo' && u.is_active !== false);
   
   return (
     <div className="p-8 max-w-7xl mx-auto">
