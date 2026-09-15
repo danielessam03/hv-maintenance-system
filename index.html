@@ -614,7 +614,7 @@ const getAssignableUsers = (currentUser, allUsers) => {
   const role = currentUser.role;
   if (role === 'ceo') return allUsers; // anyone
   if (role === 'admin_supervisor') return allUsers; // anyone
-  if (role === 'admin') return allUsers.filter(u => u.role === 'employee' || u.role === 'accountant' || u.id === currentUser.id);
+  if (role === 'admin') return allUsers.filter(u => u.role === 'employee' || u.role === 'accountant' || u.role === 'admin_supervisor' || u.id === currentUser.id); // admins may also assign the supervisor
   if (role === 'accountant') return allUsers; // anyone
   return []; // employee: none
 };
@@ -1021,7 +1021,7 @@ const LoginPage = ({ onLogin, onReconfig }) => {
             <p className="text-white/80 leading-relaxed">منصة احترافية لإدارة عمليات الصيانة، التشطيب، المخزون، والمقايسات.</p>
             <div className="mt-6"><span className="live-indicator"><span className="live-dot"></span> متصل بقاعدة البيانات</span></div>
           </div>
-          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.5</div>
+          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.6</div>
         </div>
         <div className="p-8 lg:p-12 flex flex-col justify-center">
           <div className="lg:hidden mb-8"><HVLogo size="md"/></div>
