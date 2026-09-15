@@ -64,6 +64,7 @@
   .task-card{background:#fff;border:1px solid var(--hv-line);border-radius:16px;transition:all .25s ease;overflow:hidden}
   .task-card:hover{box-shadow:0 12px 30px rgba(15,46,54,0.08);border-color:rgba(27,138,168,0.3)}
   .task-card.late{border-color:var(--hv-danger);border-width:2px;background:linear-gradient(0deg, rgba(178,58,58,0.02), #fff)}
+  .task-card.attention{border-color:var(--hv-gold);border-width:2px;background:linear-gradient(0deg, rgba(212,168,90,0.05), #fff)}
   .modal-backdrop{position:fixed;inset:0;background:rgba(15,46,54,0.55);backdrop-filter:blur(4px);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .2s ease}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
   @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -332,8 +333,18 @@ const getEmployeeProgress = (task, userId) => {
   return ep[userId] || ep[String(userId)] || { checked_subtasks:[], notes:'', extra_work:'', final_revision:false, submitted_at:null };
 };
 
-const isTaskFullySubmittedByAll = (task) => {
+/* Suspended / deleted accounts (filled by the app from hv_users.is_active). A task
+   assigned to a suspended account must not wait forever for that person to submit. */
+let INACTIVE_USER_IDS = new Set();
+const getActiveAssignedIds = (task) => {
   const ids = getAssignedIds(task);
+  const active = ids.filter(id => !INACTIVE_USER_IDS.has(id));
+  return active.length > 0 ? active : ids;
+};
+
+const isTaskFullySubmittedByAll = (task) => {
+  if (task.submitted_at) return true;
+  const ids = getActiveAssignedIds(task);
   if (ids.length === 0) return false;
   const ep = task.employee_progress || {};
   return ids.every(id => {
@@ -350,8 +361,11 @@ const isMissionComplete = (t) => !!t.actual_completion_date;
 const isTaskActiveOn = (t, dateStr) => {
   return dateStr >= getTaskStartDate(t) && dateStr <= getTaskEndDate(t);
 };
+/* Late = the work itself is still outstanding after the end date. Once everyone has
+   submitted, or the task is finished / fully reviewed, it is no longer "late". */
 const isTaskLate = (t) => {
-  if (isMissionComplete(t)) return false;
+  if (isMissionComplete(t) || t.supervisor_revised_at || t.admin_revised_at) return false;
+  if (isTaskFullySubmittedByAll(t)) return false;
   const today = new Date().toISOString().split('T')[0];
   return getTaskEndDate(t) < today;
 };
@@ -390,14 +404,29 @@ const getAggregateProgress = (task, taskType) => {
   return { checked: allChecked.size, total: subtasks.length, percent: subtasks.length===0?0:Math.round((allChecked.size/subtasks.length)*100) };
 };
 
+/* ===== REVIEW WORKFLOW =====
+   employee(s) submit  ->  admin review ("مراجعة الإدارة")  ->  senior review ("المراجعة العليا")
+   "Mission complete" (إنجاز المهمة) by an admin counts as the admin review, so the task
+   moves straight to the supervisor's queue instead of looking "not done" on their screen. */
+const isReadyForAdminReview = (t) => !t.admin_revised_at && (isTaskFullySubmittedByAll(t) || isMissionComplete(t));
+const isAwaitingSupervisor = (t) => !!t.admin_revised_at && !t.supervisor_revised_at;
+const isFullyReviewed = (t) => !!t.supervisor_revised_at;
+const REVIEWER_ROLES = ['admin','admin_supervisor','ceo','accountant'];
+const SENIOR_ROLES = ['admin_supervisor','ceo'];
+/* Does THIS user have to act on the task (review it)? */
+const needsReviewBy = (t, user) => {
+  if (!user) return false;
+  if (REVIEWER_ROLES.includes(user.role) && isReadyForAdminReview(t)) return true;
+  if (SENIOR_ROLES.includes(user.role) && isAwaitingSupervisor(t)) return true;
+  return false;
+};
+
 const getTaskStatus = (task) => {
-  const today = new Date().toISOString().split('T')[0];
-  if (isMissionComplete(task)) return 'mission_complete';
   if (task.supervisor_revised_at) return 'fully_revised';
-  if (task.admin_revised_at) return 'admin_revised';
-  if (isTaskFullySubmittedByAll(task)) return 'submitted';
+  if (task.admin_revised_at) return 'awaiting_supervisor';
+  if (isTaskFullySubmittedByAll(task) || isMissionComplete(task)) return 'awaiting_admin';
   if (isTaskSubmittedByAny(task)) return 'partial_submit';
-  if (getTaskEndDate(task) < today) return 'late';
+  if (isTaskLate(task)) return 'late';
   // Check if anyone made progress
   const ids = getAssignedIds(task);
   const anyProgress = ids.some(id => (getEmployeeProgress(task, id).checked_subtasks||[]).length > 0);
@@ -409,12 +438,34 @@ const STATUS_LABELS = {
   pending:{label:'قيد الانتظار',class:'badge-pending',icon:'clock'},
   in_progress:{label:'قيد التنفيذ',class:'badge-progress',icon:'tasks'},
   partial_submit:{label:'تسليم جزئي',class:'badge-progress',icon:'check'},
-  submitted:{label:'تم التسليم',class:'badge-progress',icon:'check'},
-  admin_revised:{label:'تمت مراجعة الإدارة',class:'badge-revised',icon:'shield'},
-  fully_revised:{label:'تمت المراجعة بالكامل',class:'badge-done',icon:'check'},
-  mission_complete:{label:'تم إنجاز المهمة',class:'badge-done',icon:'check'},
+  awaiting_admin:{label:'بانتظار مراجعة الإدارة',class:'badge-revised',icon:'shield'},
+  awaiting_supervisor:{label:'بانتظار المراجعة العليا',class:'badge-revised',icon:'shield'},
+  fully_revised:{label:'معتمدة نهائياً',class:'badge-done',icon:'check'},
   late:{label:'متأخرة',class:'badge-late',icon:'alert'},
+  // legacy keys kept so nothing breaks if an old value shows up
+  submitted:{label:'بانتظار مراجعة الإدارة',class:'badge-revised',icon:'shield'},
+  admin_revised:{label:'بانتظار المراجعة العليا',class:'badge-revised',icon:'shield'},
+  mission_complete:{label:'تم إنجاز المهمة',class:'badge-done',icon:'check'},
 };
+
+/* ===== ORDERING: late first, then what needs MY action, then other open work =====
+   Used by every task list so whoever opens the system sees the urgent items on top. */
+const taskPriority = (t, user) => {
+  if (isTaskLate(t)) return 0;
+  if (needsReviewBy(t, user)) return 1;
+  const s = getTaskStatus(t);
+  const waiting = s === 'awaiting_admin' || s === 'awaiting_supervisor' || s === 'partial_submit';
+  const isEmployee = !user || user.role === 'employee';
+  if (waiting) return isEmployee ? 3 : 2;
+  if (s === 'fully_revised') return 4;
+  return isEmployee ? 2 : 3; // pending / in_progress
+};
+const sortTasksByPriority = (tasks, user) => tasks.slice().sort((a, b) => {
+  const pa = taskPriority(a, user), pb = taskPriority(b, user);
+  if (pa !== pb) return pa - pb;
+  if (pa === 0) return getTaskEndDate(a).localeCompare(getTaskEndDate(b)); // most overdue first
+  return getTaskStartDate(b).localeCompare(getTaskStartDate(a));
+});
 
 const LOCATION_TYPES = {
   unit_only:{label:'في وحدة عقارية',desc:'مهمة داخل وحدة فقط',icon:'location',needsProperty:true,needsSource:false,needsDest:false},
@@ -917,7 +968,7 @@ const LoginPage = ({ onLogin, onReconfig }) => {
             <p className="text-white/80 leading-relaxed">منصة احترافية لإدارة عمليات الصيانة، التشطيب، المخزون، والمقايسات.</p>
             <div className="mt-6"><span className="live-indicator"><span className="live-dot"></span> متصل بقاعدة البيانات</span></div>
           </div>
-          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.3</div>
+          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.4</div>
         </div>
         <div className="p-8 lg:p-12 flex flex-col justify-center">
           <div className="lg:hidden mb-8"><HVLogo size="md"/></div>
@@ -953,7 +1004,7 @@ const NAV_ITEMS_DEF = (alertsCount) => [
   { id:'kpi', label:'مؤشرات الأداء', icon:'chart', roles:['admin','admin_supervisor','ceo','accountant'] },
   { id:'reports', label:'التقارير', icon:'report', roles:['admin','admin_supervisor','ceo','accountant'] },
   { id:'audit', label:'سجل التدقيق', icon:'archive', roles:['admin_supervisor','ceo'] },
-  { id:'alerts', label:'التنبيهات', icon:'bell', roles:['admin_supervisor','ceo'], badge:alertsCount },
+  { id:'alerts', label:'التنبيهات', icon:'bell', roles:['admin','admin_supervisor','ceo','accountant'], badge:alertsCount },
   { id:'credentials', label:'بيانات الدخول', icon:'key', roles:['ceo'] },
   { id:'settings', label:'الإعدادات', icon:'settings', roles:['admin','admin_supervisor','ceo'] },
 ];
@@ -1058,6 +1109,7 @@ const TaskCard = ({ task, taskType, locationSummary, assignees, currentUser, onO
   const agg = getAggregateProgress(task, taskType);
   const locIcon = getLocationIcon(task.location_type);
   const isLate = isTaskLate(task);
+  const needsMe = needsReviewBy(task, currentUser);
   const isRange = isTaskRange(task);
   const today = new Date().toISOString().split('T')[0];
   const startDate = getTaskStartDate(task);
@@ -1066,13 +1118,14 @@ const TaskCard = ({ task, taskType, locationSummary, assignees, currentUser, onO
   const elapsedDays = isMissionComplete(task) ? getActualDuration(task) : Math.max(0, Math.round((new Date(today) - new Date(startDate))/(1000*60*60*24)));
   
   return (
-    <div className={`task-card card-shadow cursor-pointer ${isLate?'late':''}`} onClick={()=>onOpen(task)}>
+    <div className={`task-card card-shadow cursor-pointer ${isLate?'late':needsMe?'attention':''}`} onClick={()=>onOpen(task)}>
       <div className="p-5">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className={`badge ${si.class}`}><Icon name={si.icon} size={12}/>{si.label}</span>
               {isLate && <span className="alert-pulse w-2 h-2 rounded-full" style={{background:'var(--hv-danger)'}}></span>}
+              {needsMe && <span className="badge text-[10px]" style={{background:'var(--hv-gold)',color:'#fff'}}><Icon name="bell" size={10}/>بانتظار مراجعتك</span>}
               {isRange && <span className="badge badge-progress text-[10px]"><Icon name="calendarDays" size={10}/>متعددة الأيام</span>}
               {task.recurrence_config && <span className="badge badge-revised text-[10px]"><Icon name="repeat" size={10}/>متكررة</span>}
               {task.reopened_count > 0 && <span className="badge badge-pending text-[10px]"><Icon name="refresh" size={10}/>أعيد فتحها</span>}
@@ -1121,14 +1174,14 @@ const TaskCard = ({ task, taskType, locationSummary, assignees, currentUser, onO
         </div>
         {(currentUser.role==='admin' || currentUser.role==='admin_supervisor' || currentUser.role==='ceo') && (
           <div className="flex items-center gap-2 mt-3 pt-3 border-t flex-wrap" style={{borderColor:'var(--hv-line)'}}>
-            <span className={`badge text-[10px] ${task.admin_revised_at?'badge-revised':'badge-pending'}`}>
+            <span className={`badge text-[10px] ${task.admin_revised_at?'badge-done':isReadyForAdminReview(task)?'badge-revised':'badge-pending'}`}>
               <Icon name={task.admin_revised_at?'check':'clock'} size={10}/>
-              {task.admin_revised_at?'تمت مراجعة الإدارة':'بانتظار الإدارة'}
+              {task.admin_revised_at?'تمت مراجعة الإدارة':isReadyForAdminReview(task)?'بانتظار مراجعة الإدارة':'لم يُسلَّم بعد'}
             </span>
             {(currentUser.role==='admin_supervisor' || currentUser.role==='ceo') && (
-              <span className={`badge text-[10px] ${task.supervisor_revised_at?'badge-done':'badge-pending'}`}>
+              <span className={`badge text-[10px] ${task.supervisor_revised_at?'badge-done':isAwaitingSupervisor(task)?'badge-revised':'badge-pending'}`}>
                 <Icon name={task.supervisor_revised_at?'check':'clock'} size={10}/>
-                {task.supervisor_revised_at?'تمت المراجعة العليا':'بانتظار المشرف'}
+                {task.supervisor_revised_at?'تمت المراجعة العليا':isAwaitingSupervisor(task)?'بانتظار المراجعة العليا':'بانتظار الإدارة أولاً'}
               </span>
             )}
           </div>
@@ -1192,8 +1245,10 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
   // Employees can edit their own progress only if not yet submitted
   // Admin+ can ALWAYS edit anyone's progress
   const canEmployeeEdit = (isAssignee && editingForEmployeeId === currentUser.id && !alreadySubmittedByMe) || isAdminPlus;
-  const canAdminRevise = isAdminPlus && isTaskFullySubmittedByAll(task) && !task.admin_revised_at;
-  const canSupervisorRevise = ['admin_supervisor','ceo'].includes(currentUser.role) && task.admin_revised_at && !task.supervisor_revised_at;
+  const anyDelivered = isTaskSubmittedByAny(task) || isMissionComplete(task);
+  const showReviewPanels = anyDelivered || !!task.admin_revised_at || !!task.supervisor_revised_at;
+  const canAdminRevise = isAdminPlus && anyDelivered && !task.admin_revised_at;
+  const canSupervisorRevise = ['admin_supervisor','ceo'].includes(currentUser.role) && anyDelivered && !task.supervisor_revised_at;
   const canEditTask = ['admin_supervisor','ceo'].includes(currentUser.role);
   const canComment = isAdminPlus;
   const canReopen = isAdminPlus && (task.admin_revised_at || isTaskSubmittedByAny(task) || isMissionComplete(task));
@@ -1212,7 +1267,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
   };
   
   const updateMyProgress = async (overrides = {}) => {
-    const ep = task.employee_progress || {};
+    const ep = JSON.parse(JSON.stringify(task.employee_progress || {}));
     const targetId = editingForEmployeeId;
     const tp = ep[targetId] || ep[String(targetId)] || {};
     ep[targetId] = {
@@ -1246,7 +1301,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
       employee_progress: ep,
       audit_trail: [...(task.audit_trail||[]), {action: allChecked?`تسليم بالكامل من ${targetName}`:`تسليم جزئي من ${targetName} (${checkedSubtasks.length}/${subtasks.length})`,by:currentUser.name,timestamp:submitted_at}]
     };
-    const allDone = assignedIds.every(id => {
+    const allDone = getActiveAssignedIds(task).every(id => {
       if (id === editingForEmployeeId) return true;
       const p = ep[id] || ep[String(id)];
       return p && p.submitted_at;
@@ -1269,10 +1324,14 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
   
   const handleSupervisorRevise = async () => {
     setSaving(true);
-    const ok = await onUpdate(task.id, {
-      supervisor_revised_at: new Date().toISOString(), supervisor_revised_by: currentUser.name,
-      audit_trail: [...(task.audit_trail||[]), {action:'المراجعة العليا',by:currentUser.name,timestamp:new Date().toISOString()}]
-    });
+    const now = new Date().toISOString();
+    const updates = {
+      supervisor_revised_at: now, supervisor_revised_by: currentUser.name,
+      audit_trail: [...(task.audit_trail||[]), {action:'المراجعة العليا',by:currentUser.name,timestamp:now}]
+    };
+    // A senior review implies the admin review; do not leave the task half-reviewed.
+    if (!task.admin_revised_at) { updates.admin_revised_at = now; updates.admin_revised_by = currentUser.name; }
+    const ok = await onUpdate(task.id, updates);
     setSaving(false);
     if (ok) { showToast('تمت المراجعة العليا'); onClose(); }
   };
@@ -1290,10 +1349,11 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
   const handleReopen = async () => {
     if (!confirm('إعادة فتح المهمة لمتابعة العمل؟ سيتم إلغاء حالة التسليم.')) return;
     setSaving(true);
-    const ep = task.employee_progress || {};
+    const ep = JSON.parse(JSON.stringify(task.employee_progress || {}));
     Object.keys(ep).forEach(k => { if (ep[k]) ep[k].submitted_at = null; });
     const ok = await onUpdate(task.id, {
       employee_progress: ep, submitted_at: null, admin_revised_at: null, admin_revised_by: null,
+      supervisor_revised_at: null, supervisor_revised_by: null,
       actual_completion_date: null, completed_by: null,
       reopened_count: (task.reopened_count||0)+1,
       audit_trail: [...(task.audit_trail||[]), {action:'تم إعادة فتح المهمة',by:currentUser.name,timestamp:new Date().toISOString()}]
@@ -1308,10 +1368,21 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
     const now = new Date().toISOString();
     const start = getTaskStartDate(task);
     const days = Math.max(0, Math.round((new Date(now) - new Date(start)) / (1000*60*60*24)));
-    const ok = await onUpdate(task.id, {
+    const updates = {
       actual_completion_date: now, completed_by: currentUser.name,
       audit_trail: [...(task.audit_trail||[]), {action:`تم إنجاز المهمة بالكامل بعد ${days} يوم (مخططة: ${getPlannedDuration(task)} يوم)`,by:currentUser.name,timestamp:now}]
-    });
+    };
+    // Finishing a task IS the admin's sign-off: the task goes to the supervisor's queue.
+    if (!task.admin_revised_at) {
+      updates.admin_revised_at = now; updates.admin_revised_by = currentUser.name;
+      updates.audit_trail = [...updates.audit_trail, {action:'مراجعة الإدارة (تلقائياً مع الإنجاز)',by:currentUser.name,timestamp:now}];
+    }
+    // The CEO is the final authority: finishing it themselves closes the review chain.
+    if (currentUser.role === 'ceo' && !task.supervisor_revised_at) {
+      updates.supervisor_revised_at = now; updates.supervisor_revised_by = currentUser.name;
+      updates.audit_trail = [...updates.audit_trail, {action:'المراجعة العليا (تلقائياً مع الإنجاز)',by:currentUser.name,timestamp:now}];
+    }
+    const ok = await onUpdate(task.id, updates);
     setSaving(false);
     if (ok) { showToast(`تم إنجاز المهمة في ${days} يوم`); onClose(); }
   };
@@ -1685,25 +1756,25 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
           )}
           
           {/* Admin/Supervisor revisions */}
-          {['admin','admin_supervisor','ceo','accountant'].includes(currentUser.role) && isTaskFullySubmittedByAll(task) && (
+          {['admin','admin_supervisor','ceo','accountant'].includes(currentUser.role) && showReviewPanels && (
             <div className="p-4 rounded-xl border-2" style={{background:task.admin_revised_at?'rgba(27,138,168,0.06)':'#fff',borderColor:'var(--hv-teal)'}}>
               <div className="flex items-start gap-3" style={{cursor:canAdminRevise?'pointer':'default'}} onClick={canAdminRevise?handleAdminRevise:null}>
                 <div className={`checkbox-final ${task.admin_revised_at?'checked':''}`} style={{borderColor:'var(--hv-teal)',background:task.admin_revised_at?'var(--hv-teal)':'#fff'}}></div>
                 <div className="flex-1">
                   <div className="font-bold mb-1" style={{color:'var(--hv-teal-dark)'}}>مراجعة الإدارة</div>
-                  <div className="text-sm" style={{color:'var(--hv-muted)'}}>{task.admin_revised_at?`${task.admin_revised_by} • ${formatDateTime(task.admin_revised_at)}`:'اضغط للمراجعة'}</div>
+                  <div className="text-sm" style={{color:'var(--hv-muted)'}}>{task.admin_revised_at?`${task.admin_revised_by} • ${formatDateTime(task.admin_revised_at)}`:(isTaskFullySubmittedByAll(task)||isMissionComplete(task))?'اضغط للمراجعة':'لم يسلّم كل المكلفين بعد — يمكنك المراجعة الآن إن كان العمل مكتملاً'}</div>
                 </div>
               </div>
             </div>
           )}
           
-          {['admin_supervisor','ceo'].includes(currentUser.role) && isTaskFullySubmittedByAll(task) && (
+          {['admin_supervisor','ceo'].includes(currentUser.role) && showReviewPanels && (
             <div className="p-4 rounded-xl border-2" style={{background:task.supervisor_revised_at?'rgba(212,168,90,0.08)':'#fff',borderColor:'var(--hv-gold)'}}>
               <div className="flex items-start gap-3" style={{cursor:canSupervisorRevise?'pointer':'default'}} onClick={canSupervisorRevise?handleSupervisorRevise:null}>
                 <div className={`checkbox-final ${task.supervisor_revised_at?'checked':''}`}></div>
                 <div className="flex-1">
                   <div className="font-bold mb-1" style={{color:'var(--hv-gold-dark)'}}>المراجعة العليا</div>
-                  <div className="text-sm" style={{color:'var(--hv-muted)'}}>{task.supervisor_revised_at?`${task.supervisor_revised_by} • ${formatDateTime(task.supervisor_revised_at)}`:!task.admin_revised_at?'يجب أن تتم مراجعة الإدارة أولاً':'اضغط للمراجعة'}</div>
+                  <div className="text-sm" style={{color:'var(--hv-muted)'}}>{task.supervisor_revised_at?`${task.supervisor_revised_by} • ${formatDateTime(task.supervisor_revised_at)}`:!task.admin_revised_at?'اضغط للمراجعة (ستُسجَّل مراجعة الإدارة معها)':'اضغط للمراجعة'}</div>
                 </div>
               </div>
             </div>
@@ -1805,7 +1876,8 @@ const RepeatTaskPrompt = ({ task, onClose, onConfirm, showToast }) => {
 };
 
 // ==================== MY DAY ====================
-const MyDayPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadAttachments, onDeleteTask, showToast }) => {
+const MyDayPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadAttachments, onDeleteTask, showToast, setCurrentPage }) => {
+  const ATTENTION_CAP = 6; // show the most urgent few here; the rest live in التنبيهات
   const [openTask, setOpenTask] = useState(null);
   const today = new Date().toISOString().split('T')[0];
   const myTasks = useMemo(() => {
@@ -1813,9 +1885,17 @@ const MyDayPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadAtta
   }, [data.tasks, currentUser, today]);
   
   // Late tasks (end_date passed, not completed)
+  const isReviewer = REVIEWER_ROLES.includes(currentUser.role);
+  // Late tasks: managers see everyone's late work, employees see their own
   const myLateTasks = useMemo(() => {
-    return data.tasks.filter(t => isUserAssigned(t, currentUser.id) && isTaskLate(t));
+    const list = data.tasks.filter(t => isTaskLate(t) && (isReviewer || isUserAssigned(t, currentUser.id)));
+    return sortTasksByPriority(list, currentUser);
   }, [data.tasks, currentUser, today]);
+  // Tasks waiting for THIS user's review (admin review / senior review)
+  const myReviewQueue = useMemo(() => {
+    return sortTasksByPriority(data.tasks.filter(t => needsReviewBy(t, currentUser)), currentUser);
+  }, [data.tasks, currentUser]);
+  const myTasksSorted = useMemo(() => sortTasksByPriority(myTasks, currentUser), [myTasks, currentUser]);
   
   const completed = myTasks.filter(t=>isTaskFullySubmittedByAll(t)).length;
   const inProgress = myTasks.filter(t=>!isTaskFullySubmittedByAll(t) && getAggregateProgress(t, data.taskTypes.find(tt=>tt.id===t.task_type_id)).checked > 0).length;
@@ -1844,12 +1924,32 @@ const MyDayPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadAtta
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <h3 className="font-display font-bold text-xl flex items-center gap-2" style={{color:'var(--hv-danger)'}}>
-              <Icon name="alert" size={20}/>مهام متأخرة ({myLateTasks.length})
+              <Icon name="alert" size={20}/>{isReviewer ? 'مهام متأخرة — الجميع' : 'مهام متأخرة'} ({myLateTasks.length})
             </h3>
             <div className="flex-1 h-px" style={{background:'var(--hv-line)'}}></div>
+            {isReviewer && myLateTasks.length > ATTENTION_CAP && setCurrentPage && (
+              <button onClick={()=>setCurrentPage('alerts')} className="btn-ghost px-3 py-1.5 rounded-lg text-xs font-bold">عرض الكل ({myLateTasks.length})</button>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {myLateTasks.map(renderCard)}
+            {(isReviewer ? myLateTasks.slice(0, ATTENTION_CAP) : myLateTasks).map(renderCard)}
+          </div>
+        </div>
+      )}
+
+      {myReviewQueue.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <h3 className="font-display font-bold text-xl flex items-center gap-2" style={{color:'var(--hv-gold-dark)'}}>
+              <Icon name="bell" size={20}/>بانتظار مراجعتك ({myReviewQueue.length})
+            </h3>
+            <div className="flex-1 h-px" style={{background:'var(--hv-line)'}}></div>
+            {myReviewQueue.length > ATTENTION_CAP && setCurrentPage && (
+              <button onClick={()=>setCurrentPage('alerts')} className="btn-ghost px-3 py-1.5 rounded-lg text-xs font-bold">عرض الكل ({myReviewQueue.length})</button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {myReviewQueue.slice(0, ATTENTION_CAP).map(renderCard)}
           </div>
         </div>
       )}
@@ -1864,7 +1964,7 @@ const MyDayPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadAtta
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {myTasks.map(renderCard)}
+          {myTasksSorted.map(renderCard)}
         </div>
       )}
       {openTask && <TaskDetailModal task={data.tasks.find(x=>x.id===openTask.id)||openTask} taskType={data.taskTypes.find(t=>t.id===openTask.task_type_id)}
@@ -2158,7 +2258,7 @@ const AllTasksPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadA
   
   const pageTitle = mode==='my' ? 'مهامي' : mode==='team' ? 'مهام الفريق' : 'جميع المهام';
   
-  const filtered = useMemo(() => data.tasks.filter(task => {
+  const filteredRaw = useMemo(() => data.tasks.filter(task => {
     // Mode filter
     if (mode === 'my' && !isUserAssigned(task, currentUser.id)) return false;
     if (mode === 'team') {
@@ -2168,7 +2268,8 @@ const AllTasksPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadA
       if (!ids.some(id => id !== currentUser.id)) return false;
     }
     if (filterEmployee!=='all' && !isUserAssigned(task, parseInt(filterEmployee))) return false;
-    if (filterStatus!=='all' && getTaskStatus(task)!==filterStatus) return false;
+    if (filterStatus==='needs_me') { if (!(needsReviewBy(task, currentUser) || isTaskLate(task))) return false; }
+    else if (filterStatus!=='all' && getTaskStatus(task)!==filterStatus) return false;
     // Date range filter (task overlaps with selected range)
     if (filterDateFrom && getTaskEndDate(task) < filterDateFrom) return false;
     if (filterDateTo && getTaskStartDate(task) > filterDateTo) return false;
@@ -2179,7 +2280,8 @@ const AllTasksPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadA
       if (!ls.toLowerCase().includes(q) && !tt?.title.toLowerCase().includes(q)) return false;
     }
     return true;
-  }).sort((a,b)=>new Date(getTaskStartDate(b))-new Date(getTaskStartDate(a))), [data, filterStatus, filterEmployee, searchQuery, filterDateFrom, filterDateTo, mode, currentUser]);
+  }), [data, filterStatus, filterEmployee, searchQuery, filterDateFrom, filterDateTo, mode, currentUser]);
+  const filtered = useMemo(() => sortTasksByPriority(filteredRaw, currentUser), [filteredRaw, currentUser]);
   const assignableForFilter = data.users.filter(u => u.role !== 'ceo' && u.is_active !== false);
   
   return (
@@ -2193,10 +2295,11 @@ const AllTasksPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadA
           </div>
           <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="input-field">
             <option value="all">جميع الحالات</option>
+            <option value="needs_me">⚠ تحتاج إجراءك (متأخرة أو بانتظار مراجعتك)</option>
+            <option value="late">متأخرة</option>
             <option value="pending">قيد الانتظار</option><option value="in_progress">قيد التنفيذ</option>
-            <option value="partial_submit">تسليم جزئي</option><option value="submitted">تم التسليم</option>
-            <option value="admin_revised">تمت مراجعة الإدارة</option><option value="fully_revised">مراجعة كاملة</option>
-            <option value="mission_complete">تم الإنجاز</option><option value="late">متأخرة</option>
+            <option value="partial_submit">تسليم جزئي</option><option value="awaiting_admin">بانتظار مراجعة الإدارة</option>
+            <option value="awaiting_supervisor">بانتظار المراجعة العليا</option><option value="fully_revised">معتمدة نهائياً</option>
           </select>
           {mode !== 'my' && (
             <select value={filterEmployee} onChange={e=>setFilterEmployee(e.target.value)} className="input-field">
@@ -3262,7 +3365,7 @@ const ReportsPage = ({ data, currentUser }) => {
           </div>
           <div className="p-3 rounded-xl text-center" style={{background:'rgba(178,58,58,0.08)'}}>
             <div className="text-xs" style={{color:'var(--hv-muted)'}}>المتأخرة</div>
-            <div className="font-display text-2xl font-black" style={{color:'var(--hv-danger)'}}>{filtered.filter(t=>{const today=new Date().toISOString().split('T')[0];return t.task_date<today && !isTaskFullySubmittedByAll(t);}).length}</div>
+            <div className="font-display text-2xl font-black" style={{color:'var(--hv-danger)'}}>{filtered.filter(t=>isTaskLate(t)).length}</div>
           </div>
           <div className="p-3 rounded-xl text-center" style={{background:'rgba(212,168,90,0.10)'}}>
             <div className="text-xs" style={{color:'var(--hv-muted)'}}>قيد التنفيذ</div>
@@ -3346,9 +3449,9 @@ const AuditPage = ({ data, currentUser }) => {
 const AlertsPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadAttachments, onDeleteTask, showToast }) => {
   const [openTask, setOpenTask] = useState(null);
   const today = new Date().toISOString().split('T')[0];
-  const lateTasks = data.tasks.filter(t => isTaskLate(t));
-  const needsAdminRevise = data.tasks.filter(t => isTaskFullySubmittedByAll(t) && !t.admin_revised_at);
-  const needsSupervisorRevise = data.tasks.filter(t => t.admin_revised_at && !t.supervisor_revised_at);
+  const lateTasks = sortTasksByPriority(data.tasks.filter(t => isTaskLate(t)), currentUser);
+  const needsAdminRevise = sortTasksByPriority(data.tasks.filter(t => isReadyForAdminReview(t)), currentUser);
+  const needsSupervisorRevise = sortTasksByPriority(data.tasks.filter(t => isAwaitingSupervisor(t)), currentUser);
   
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -3901,6 +4004,7 @@ const App = () => {
   
   // Keep the logged-in user's permissions fresh (e.g. CEO toggles reschedule access mid-session)
   useEffect(() => {
+    INACTIVE_USER_IDS = new Set(data.users.filter(u => u.is_active === false).map(u => u.id));
     if (currentUser && data.users.length > 0) {
       const fresh = data.users.find(u => u.id === currentUser.id);
       if (fresh && JSON.stringify(fresh) !== JSON.stringify(currentUser)) setCurrentUser(fresh);
@@ -3979,10 +4083,47 @@ const App = () => {
           const { data: m } = await supabaseClient.from('hv_meetings').select('*').order('meeting_date',{ascending:false});
           setData(prev => ({...prev, meetings: m||[]}));
         })
-        .subscribe();
+        .subscribe((status) => {
+          // Whenever the live channel (re)connects, pull what may have been missed meanwhile
+          if (status === 'SUBSCRIBED') refreshLive();
+        });
       return () => supabaseClient.removeChannel(channel);
     }
-  }, [currentUser, needsConfig]);
+  }, [currentUser && currentUser.id, needsConfig]);
+
+  /* Phones put the page to sleep and drop the live socket: refresh the task data whenever
+     the app comes back to the foreground / regains network, plus a 60s safety poll. */
+  useEffect(() => {
+    if (needsConfig || !supabaseClient || !currentUser) return;
+    const onWake = () => { if (document.visibilityState === 'visible') refreshLive(); };
+    document.addEventListener('visibilitychange', onWake);
+    window.addEventListener('focus', onWake);
+    window.addEventListener('online', onWake);
+    const timer = setInterval(onWake, 60000);
+    return () => {
+      document.removeEventListener('visibilitychange', onWake);
+      window.removeEventListener('focus', onWake);
+      window.removeEventListener('online', onWake);
+      clearInterval(timer);
+    };
+  }, [currentUser && currentUser.id, needsConfig]);
+
+  // Light refresh of the things that change between accounts (no loading spinner)
+  const refreshLive = async () => {
+    if (!supabaseClient) return;
+    try {
+      const [t, c, a] = await Promise.all([
+        supabaseClient.from('hv_tasks').select('*').order('task_date',{ascending:false}),
+        supabaseClient.from('hv_comments').select('*').order('created_at',{ascending:false}),
+        supabaseClient.from('hv_attachments').select('*').order('created_at',{ascending:false}),
+      ]);
+      setData(prev => ({...prev,
+        tasks: t.error ? prev.tasks : (t.data||[]),
+        comments: c.error ? prev.comments : (c.data||[]),
+        attachments: a.error ? prev.attachments : (a.data||[]),
+      }));
+    } catch (e) { /* offline: keep what we have */ }
+  };
   
   // Lightweight task-only reload
   const reloadTasks = async () => {
@@ -4109,16 +4250,15 @@ const App = () => {
   
   const today = new Date().toISOString().split('T')[0];
   const alertsCount = useMemo(() => {
-    if (!currentUser || !['admin_supervisor','ceo'].includes(currentUser.role)) return 0;
+    if (!currentUser || !REVIEWER_ROLES.includes(currentUser.role)) return 0;
     const late = data.tasks.filter(t => isTaskLate(t)).length;
-    const needAdmin = data.tasks.filter(t => isTaskFullySubmittedByAll(t) && !t.admin_revised_at).length;
-    const needSup = data.tasks.filter(t => t.admin_revised_at && !t.supervisor_revised_at).length;
-    return late + needAdmin + needSup;
+    const mine = data.tasks.filter(t => needsReviewBy(t, currentUser)).length;
+    return late + mine;
   }, [data.tasks, currentUser, today]);
   
   // Page routing
   const renderPage = () => {
-    const props = { data, currentUser, onUpdateTask:updateTask, onAddComment:addComment, onReloadAttachments:reloadAttachments, onDeleteTask:deleteTask, showToast };
+    const props = { data, currentUser, onUpdateTask:updateTask, onAddComment:addComment, onReloadAttachments:reloadAttachments, onDeleteTask:deleteTask, showToast, setCurrentPage };
     switch (currentPage) {
       case 'my_day': return <MyDayPage {...props}/>;
       case 'upcoming': return <UpcomingPage {...props}/>;
