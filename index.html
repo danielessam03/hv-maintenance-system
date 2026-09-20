@@ -288,7 +288,7 @@ const HVLogoImage = ({ height = 80 }) => (
   <img src={HV_LOGO_FULL} alt="Home Vacation" style={{height, width:'auto', objectFit:'contain'}}/>
 );
 
-const ROLE_NAMES = { admin:'مدير', admin_supervisor:'مشرف الإدارة', ceo:'الرئيس التنفيذي', employee:'موظف', accountant:'محاسب' };
+const ROLE_NAMES = { admin:'مدير', admin_supervisor:'مسؤول العمليات', ceo:'الرئيس التنفيذي', employee:'موظف', accountant:'محاسب' };
 const ROLE_BADGES = {
   admin:{bg:'rgba(27,138,168,0.10)',color:'var(--hv-teal-dark)',icon:'shield'},
   admin_supervisor:{bg:'rgba(212,168,90,0.18)',color:'var(--hv-gold-dark)',icon:'shield'},
@@ -1045,7 +1045,7 @@ const LoginPage = ({ onLogin, onReconfig }) => {
             <p className="text-white/80 leading-relaxed">منصة احترافية لإدارة عمليات الصيانة، التشطيب، المخزون، والمقايسات.</p>
             <div className="mt-6"><span className="live-indicator"><span className="live-dot"></span> متصل بقاعدة البيانات</span></div>
           </div>
-          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.7</div>
+          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.8</div>
         </div>
         <div className="p-8 lg:p-12 flex flex-col justify-center">
           <div className="lg:hidden mb-8"><HVLogo size="md"/></div>
@@ -1331,14 +1331,20 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
   const allConfirmed = isTaskFullySubmittedByAll(task);
   const confState = getConfirmationState(task);
   const notConfirmedNames = confState.pendingIds.map(id => allUsers.find(u => u.id === id)?.name || ('#'+id));
-  const showReviewPanels = allConfirmed || !!task.admin_revised_at || !!task.supervisor_revised_at;
-  const canAdminRevise = isAdminPlus && allConfirmed && !task.admin_revised_at;
-  const canSupervisorRevise = ['admin_supervisor','ceo'].includes(currentUser.role) && allConfirmed && !task.supervisor_revised_at;
+  /* v6.8: the "every assignee must confirm" rule guards the ADMIN step only. Once a task is in the seniors' queue
+     (admin already reviewed it, or it was finished), مسؤول العمليات / CEO must always be able to close it — otherwise
+     old tasks whose employees never pressed "تسليم" sit in التنبيهات forever with a dead button. Seniors may also
+     finish or review a task on behalf of missing confirmations; the audit trail records who had not confirmed. */
+  const isSenior = ['admin_supervisor','ceo'].includes(currentUser.role);
+  const reachedSeniors = !!task.admin_revised_at || isMissionComplete(task);
+  const showReviewPanels = allConfirmed || reachedSeniors || !!task.supervisor_revised_at || isSenior;
+  const canAdminRevise = isAdminPlus && (allConfirmed || isSenior) && !task.admin_revised_at;
+  const canSupervisorRevise = isSenior && !task.supervisor_revised_at;
   const canEditTask = ['admin_supervisor','ceo'].includes(currentUser.role);
   const canComment = isAdminPlus;
   const canReopen = isAdminPlus && (task.admin_revised_at || isTaskSubmittedByAny(task) || isMissionComplete(task));
-  const canMissionComplete = isAdminPlus && !isMissionComplete(task) && allConfirmed;
-  const missionBlocked = isAdminPlus && !isMissionComplete(task) && !allConfirmed;
+  const canMissionComplete = isAdminPlus && !isMissionComplete(task) && (allConfirmed || isSenior);
+  const missionBlocked = isAdminPlus && !isSenior && !isMissionComplete(task) && !allConfirmed;
   const canEditSubtaskList = isAdminPlus;
   const canSwitchEmployee = isAdminPlus && assignedIds.length > 0;
   
@@ -1413,7 +1419,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
     const now = new Date().toISOString();
     const updates = {
       supervisor_revised_at: now, supervisor_revised_by: currentUser.name,
-      audit_trail: [...(task.audit_trail||[]), {action:'المراجعة العليا',by:currentUser.name,timestamp:now}]
+      audit_trail: [...(task.audit_trail||[]), {action:'المراجعة العليا' + (!allConfirmed && notConfirmedNames.length ? ` (بدون تأكيد: ${notConfirmedNames.join('، ')})` : ''),by:currentUser.name,timestamp:now}]
     };
     // A senior review implies the admin review; do not leave the task half-reviewed.
     if (!task.admin_revised_at) { updates.admin_revised_at = now; updates.admin_revised_by = currentUser.name; }
@@ -1456,7 +1462,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
     const days = Math.max(0, Math.round((new Date(now) - new Date(start)) / (1000*60*60*24)));
     const updates = {
       actual_completion_date: now, completed_by: currentUser.name,
-      audit_trail: [...(task.audit_trail||[]), {action:`تم إنجاز المهمة بالكامل بعد ${days} يوم (مخططة: ${getPlannedDuration(task)} يوم)`,by:currentUser.name,timestamp:now}]
+      audit_trail: [...(task.audit_trail||[]), {action:`تم إنجاز المهمة بالكامل بعد ${days} يوم (مخططة: ${getPlannedDuration(task)} يوم)` + (!allConfirmed && notConfirmedNames.length ? ` — بدون تأكيد: ${notConfirmedNames.join('، ')}` : ''),by:currentUser.name,timestamp:now}]
     };
     // Finishing a task IS the admin's sign-off: the task goes to the supervisor's queue.
     if (!task.admin_revised_at) {
@@ -2249,7 +2255,7 @@ const WeeklyPlannerPage = ({ data, currentUser, onUpdateTask, onAddComment, onRe
   
   const handleDrop = async (e, day) => {
     e.preventDefault();
-    if (!canReschedule) { showToast('التغيير في مواعيد المهام مسموح للمشرف والرئيس التنفيذي فقط','error'); return; }
+    if (!canReschedule) { showToast('التغيير في مواعيد المهام مسموح لمسؤول العمليات والرئيس التنفيذي فقط','error'); return; }
     if (!draggingTask || day === '__late__') return;
     const oldStart = getTaskStartDate(draggingTask);
     if (oldStart === day) { setDragOverDay(null); setDraggingTask(null); return; }
@@ -2884,7 +2890,7 @@ const InvoiceViewModal = ({ invoice, parent, properties, currentUser, onClose, o
     } else if (level === 'ceo') {
       updates = { ceo_approved_at: now, ceo_approved_by: currentUser.name };
     }
-    updates.audit_trail = [...(invoice.audit_trail||[]), {action:`اعتماد ${level==='admin'?'الإدارة':level==='supervisor'?'المشرف':level==='accounting'?'الحسابات':'الرئيس التنفيذي'}`, by:currentUser.name, timestamp:now}];
+    updates.audit_trail = [...(invoice.audit_trail||[]), {action:`اعتماد ${level==='admin'?'الإدارة':level==='supervisor'?'مسؤول العمليات':level==='accounting'?'الحسابات':'الرئيس التنفيذي'}`, by:currentUser.name, timestamp:now}];
     await onApprove(invoice.id, updates);
   };
   
@@ -2936,7 +2942,7 @@ const InvoiceViewModal = ({ invoice, parent, properties, currentUser, onClose, o
             
             {/* Supervisor */}
             <div className="p-3 rounded-xl border-2" style={{borderColor:supervisorApproved?'var(--hv-success)':'var(--hv-line)', background:supervisorApproved?'rgba(46,125,91,0.06)':'#fff', opacity:!(adminApproved&&accountingConfirmed)?0.5:1}}>
-              <div className="text-xs font-bold mb-1" style={{color:'var(--hv-muted)'}}>3. المشرف</div>
+              <div className="text-xs font-bold mb-1" style={{color:'var(--hv-muted)'}}>3. مسؤول العمليات</div>
               {supervisorApproved ? (
                 <>
                   <div className="text-sm font-bold" style={{color:'var(--hv-success)'}}><Icon name="check" size={12} className="inline"/> معتمد</div>
@@ -2945,7 +2951,7 @@ const InvoiceViewModal = ({ invoice, parent, properties, currentUser, onClose, o
               ) : canSupervisorApprove && accountingConfirmed ? (
                 <button onClick={()=>handleApprove('supervisor')} className="btn-primary w-full py-1.5 rounded-lg text-xs font-bold">اعتمد</button>
               ) : (
-                <div className="text-xs" style={{color:'var(--hv-muted)'}}>{!accountingConfirmed?'بانتظار الحسابات':'بانتظار المشرف'}</div>
+                <div className="text-xs" style={{color:'var(--hv-muted)'}}>{!accountingConfirmed?'بانتظار الحسابات':'بانتظار مسؤول العمليات'}</div>
               )}
             </div>
             
@@ -3013,7 +3019,7 @@ const InvoiceViewModal = ({ invoice, parent, properties, currentUser, onClose, o
               <div className="grid grid-cols-4 gap-2 text-xs">
                 <div><strong>الإدارة:</strong> {invoice.admin_approved_by}</div>
                 <div><strong>الحسابات:</strong> ✓ تم</div>
-                <div><strong>المشرف:</strong> {invoice.supervisor_approved_by}</div>
+                <div><strong>مسؤول العمليات:</strong> {invoice.supervisor_approved_by}</div>
                 <div><strong>الرئيس التنفيذي:</strong> {invoice.ceo_approved_by}</div>
               </div>
             </div>
@@ -3142,7 +3148,7 @@ const InvoicesPage = ({ data, currentUser, onSaveInvoice, onDeleteInvoice, showT
                 <div className="flex gap-1 mb-2 flex-wrap">
                   <span className="text-[9px] px-2 py-0.5 rounded" style={{background:inv.admin_approved_at?'rgba(46,125,91,0.12)':'rgba(212,168,90,0.10)',color:inv.admin_approved_at?'var(--hv-success)':'var(--hv-muted)'}}>إدارة {inv.admin_approved_at?'✓':'⌛'}</span>
                   <span className="text-[9px] px-2 py-0.5 rounded" style={{background:inv.accounting_confirmed?'rgba(46,125,91,0.12)':'rgba(212,168,90,0.10)',color:inv.accounting_confirmed?'var(--hv-success)':'var(--hv-muted)'}}>حسابات {inv.accounting_confirmed?'✓':'⌛'}</span>
-                  <span className="text-[9px] px-2 py-0.5 rounded" style={{background:inv.supervisor_approved_at?'rgba(46,125,91,0.12)':'rgba(212,168,90,0.10)',color:inv.supervisor_approved_at?'var(--hv-success)':'var(--hv-muted)'}}>مشرف {inv.supervisor_approved_at?'✓':'⌛'}</span>
+                  <span className="text-[9px] px-2 py-0.5 rounded" style={{background:inv.supervisor_approved_at?'rgba(46,125,91,0.12)':'rgba(212,168,90,0.10)',color:inv.supervisor_approved_at?'var(--hv-success)':'var(--hv-muted)'}}>العمليات {inv.supervisor_approved_at?'✓':'⌛'}</span>
                   <span className="text-[9px] px-2 py-0.5 rounded" style={{background:inv.ceo_approved_at?'rgba(46,125,91,0.12)':'rgba(212,168,90,0.10)',color:inv.ceo_approved_at?'var(--hv-success)':'var(--hv-muted)'}}>CEO {inv.ceo_approved_at?'✓':'⌛'}</span>
                 </div>
                 <div className="flex gap-2 pt-3 border-t" style={{borderColor:'var(--hv-line)'}}>
@@ -4112,7 +4118,7 @@ const UsersSettings = ({ data, currentUser, onCreate, onUpdate, onDelete, showTo
           <option value="employee">موظف</option>
           <option value="accountant">محاسب</option>
           <option value="admin">مدير</option>
-          {currentUser.role === 'ceo' && <option value="admin_supervisor">مشرف الإدارة</option>}
+          {currentUser.role === 'ceo' && <option value="admin_supervisor">مسؤول العمليات</option>}
           {currentUser.role === 'ceo' && <option value="ceo">رئيس تنفيذي</option>}
         </select>
         <div className="flex gap-2">
