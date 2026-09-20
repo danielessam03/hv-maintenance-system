@@ -63,7 +63,9 @@
   .stat-card:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(15,46,54,0.08)}
   .task-card{background:#fff;border:1px solid var(--hv-line);border-radius:16px;transition:all .25s ease;overflow:hidden}
   .task-card:hover{box-shadow:0 12px 30px rgba(15,46,54,0.08);border-color:rgba(27,138,168,0.3)}
-  .task-card.late{border-color:var(--hv-danger);border-width:2px;background:linear-gradient(0deg, rgba(178,58,58,0.02), #fff)}
+  .task-card.late{border-color:var(--hv-danger);border-width:2px;background:rgba(178,58,58,0.07);box-shadow:0 0 0 3px rgba(178,58,58,0.10)}
+  .task-card.late h3{color:var(--hv-danger)}
+  .late-flag{background:var(--hv-danger);color:#fff;font-weight:800}
   .task-card.attention{border-color:var(--hv-gold);border-width:2px;background:linear-gradient(0deg, rgba(212,168,90,0.05), #fff)}
   .modal-backdrop{position:fixed;inset:0;background:rgba(15,46,54,0.55);backdrop-filter:blur(4px);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .2s ease}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -473,20 +475,28 @@ const STATUS_LABELS = {
 
 /* ===== ORDERING: late first, then what needs MY action, then other open work =====
    Used by every task list so whoever opens the system sees the urgent items on top. */
-const taskPriority = (t, user) => {
+/* v6.9 (Daniel): 0 = late (red, top of the page) · 1 = still not done · 2 = done, needs supervision/review · 3 = approved */
+const TASK_GROUPS = [
+  { key: 0, title: 'متأخرة', color: 'var(--hv-danger)' },
+  { key: 1, title: 'لم تُنجز بعد', color: 'var(--hv-teal-deep)' },
+  { key: 2, title: 'بانتظار المراجعة والإشراف', color: 'var(--hv-gold-dark)' },
+  { key: 3, title: 'معتمدة نهائياً', color: 'var(--hv-success)' },
+];
+const taskPriority = (t) => {
   if (isTaskLate(t)) return 0;
-  if (needsReviewBy(t, user) || needsConfirmationBy(t, user)) return 1;
   const s = getTaskStatus(t);
-  const waiting = s === 'awaiting_admin' || s === 'awaiting_supervisor' || s === 'partial_submit';
-  const isEmployee = !user || user.role === 'employee';
-  if (waiting) return isEmployee ? 3 : 2;
-  if (s === 'fully_revised') return 4;
-  return isEmployee ? 2 : 3; // pending / in_progress
+  if (s === 'fully_revised') return 3;
+  if (s === 'awaiting_admin' || s === 'awaiting_supervisor') return 2;
+  return 1; // pending / in_progress / partial_submit
 };
 const sortTasksByPriority = (tasks, user) => tasks.slice().sort((a, b) => {
   const pa = taskPriority(a, user), pb = taskPriority(b, user);
   if (pa !== pb) return pa - pb;
   if (pa === 0) return getTaskEndDate(a).localeCompare(getTaskEndDate(b)); // most overdue first
+  // inside a group, whatever is waiting for THIS person comes first
+  const ma = (needsReviewBy(a, user) || needsConfirmationBy(a, user)) ? 0 : 1, mb = (needsReviewBy(b, user) || needsConfirmationBy(b, user)) ? 0 : 1;
+  if (ma !== mb) return ma - mb;
+  if (pa === 1) return getTaskEndDate(a).localeCompare(getTaskEndDate(b));    // nearest deadline first
   return getTaskStartDate(b).localeCompare(getTaskStartDate(a));
 });
 
@@ -1045,7 +1055,7 @@ const LoginPage = ({ onLogin, onReconfig }) => {
             <p className="text-white/80 leading-relaxed">منصة احترافية لإدارة عمليات الصيانة، التشطيب، المخزون، والمقايسات.</p>
             <div className="mt-6"><span className="live-indicator"><span className="live-dot"></span> متصل بقاعدة البيانات</span></div>
           </div>
-          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.8</div>
+          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.9</div>
         </div>
         <div className="p-8 lg:p-12 flex flex-col justify-center">
           <div className="lg:hidden mb-8"><HVLogo size="md"/></div>
@@ -1204,6 +1214,7 @@ const TaskCard = ({ task, taskType, locationSummary, assignees, currentUser, onO
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="badge text-[10px]" dir="ltr" style={{fontFamily:'monospace',background:'var(--hv-cream)',color:'var(--hv-teal-deep)',letterSpacing:'0.5px'}}>{getTaskCode(task)}</span>
               <span className={`badge ${si.class}`}><Icon name={si.icon} size={12}/>{si.label}</span>
+              {isLate && <span className="badge late-flag text-[10px]"><Icon name="alert" size={10}/>متأخرة {Math.max(1, Math.round((new Date(today) - new Date(endDate))/(1000*60*60*24)))} يوم</span>}
               {isLate && <span className="alert-pulse w-2 h-2 rounded-full" style={{background:'var(--hv-danger)'}}></span>}
               {needsMe && <span className="badge text-[10px]" style={{background:'var(--hv-gold)',color:'#fff'}}><Icon name="bell" size={10}/>بانتظار مراجعتك</span>}
               {needsMyConfirm && <span className="badge text-[10px]" style={{background:'var(--hv-gold)',color:'#fff'}}><Icon name="bell" size={10}/>بانتظار تأكيدك</span>}
@@ -2436,15 +2447,29 @@ const AllTasksPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadA
       {filtered.length===0 ? (
         <div className="bg-white rounded-2xl p-16 text-center card-shadow"><Icon name="tasks" size={32} className="mx-auto mb-4 opacity-30"/><p style={{color:'var(--hv-muted)'}}>لا توجد مهام</p></div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(task => (
-            <TaskCard key={task.id} task={task} taskType={data.taskTypes.find(t=>t.id===task.task_type_id)}
-              locationSummary={getLocationSummary(task,data.properties,data.stores)}
-              assignees={getAssignedIds(task).map(id=>data.users.find(u=>u.id===id)).filter(Boolean)}
-              currentUser={currentUser} onOpen={setOpenTask}
-              attachmentCount={data.attachments.filter(a=>a.task_id===task.id).length}
-              commentCount={data.comments.filter(c=>c.task_id===task.id).length}/>
-          ))}
+        <div>
+          {TASK_GROUPS.map(g => {
+            const groupTasks = filtered.filter(t => taskPriority(t) === g.key);
+            if (groupTasks.length === 0) return null;
+            return (
+              <div key={g.key} className="mb-8">
+                <h3 className="font-display font-bold text-lg mb-3 flex items-center gap-2" style={{color:g.color}}>
+                  {g.key === 0 && <span className="alert-pulse w-2.5 h-2.5 rounded-full" style={{background:'var(--hv-danger)'}}></span>}
+                  {g.title} <span className="badge text-xs" style={g.key === 0 ? {background:'var(--hv-danger)',color:'#fff'} : {background:'var(--hv-cream)',color:g.color}}>{groupTasks.length}</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {groupTasks.map(task => (
+                    <TaskCard key={task.id} task={task} taskType={data.taskTypes.find(t=>t.id===task.task_type_id)}
+                      locationSummary={getLocationSummary(task,data.properties,data.stores)}
+                      assignees={getAssignedIds(task).map(id=>data.users.find(u=>u.id===id)).filter(Boolean)}
+                      currentUser={currentUser} onOpen={setOpenTask}
+                      attachmentCount={data.attachments.filter(a=>a.task_id===task.id).length}
+                      commentCount={data.comments.filter(c=>c.task_id===task.id).length}/>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
       {openTask && <TaskDetailModal task={data.tasks.find(x=>x.id===openTask.id)||openTask} taskType={data.taskTypes.find(t=>t.id===openTask.task_type_id)}
