@@ -1055,7 +1055,7 @@ const LoginPage = ({ onLogin, onReconfig }) => {
             <p className="text-white/80 leading-relaxed">منصة احترافية لإدارة عمليات الصيانة، التشطيب، المخزون، والمقايسات.</p>
             <div className="mt-6"><span className="live-indicator"><span className="live-dot"></span> متصل بقاعدة البيانات</span></div>
           </div>
-          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 6.9</div>
+          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 7.0</div>
         </div>
         <div className="p-8 lg:p-12 flex flex-col justify-center">
           <div className="lg:hidden mb-8"><HVLogo size="md"/></div>
@@ -1096,6 +1096,40 @@ const NAV_ITEMS_DEF = (alertsCount) => [
   { id:'settings', label:'الإعدادات', icon:'settings', roles:['admin','admin_supervisor','ceo'] },
 ];
 
+
+/* Which Home Vacation systems may THIS account open? One answer for all four apps: public.hv_my_systems().
+   The last good answer is remembered per user so the links appear instantly; nothing is shown until we know. */
+const useMySystems = (uid) => {
+  const cacheKey = 'hv_my_systems_' + (uid || '');
+  const [access, setAccess] = useState(() => { try { return JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch (e) { return null; } });
+  useEffect(() => {
+    let alive = true; const client = supabaseClient;
+    if (!client || !uid) return;
+    client.rpc('hv_my_systems').then(({ data, error }) => {
+      if (!alive || error || !data) return;
+      setAccess(data); try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch (e) {}
+    });
+    return () => { alive = false; };
+  }, [uid]);
+  return access;
+};
+const HV_SYSTEMS = [
+  { key:'hr',   icon:'👥', label:'الموارد البشرية والرواتب', url:'https://home-vacation-hr.pages.dev' },
+  { key:'crm',  icon:'🏠', label:'إدارة العقارات (CRM)', url:'https://property-management-crm.pages.dev' },
+  { key:'ops',  icon:'📋', label:'التسويق وإدخال البيانات (HV Ops)', url:'https://home-vacation-ops.pages.dev' },
+];
+const OtherSystems = ({ uid }) => {
+  const access = useMySystems(uid);
+  const items = HV_SYSTEMS.filter(x => access && access[x.key]);
+  if (items.length === 0) return null;
+  return (
+    <div className="mb-3">
+      <div className="text-[10px] font-bold tracking-wider mb-1 mr-1" style={{color:'var(--hv-muted)'}}>الأنظمة الأخرى</div>
+      {items.map(x => <a key={x.key} href={x.url} target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>{x.icon} <span className="flex-1">{x.label}</span></a>)}
+    </div>
+  );
+};
+
 const Sidebar = ({ user, currentPage, setCurrentPage, onLogout, alertsCount, onReconfig }) => {
   const visible = NAV_ITEMS_DEF(alertsCount).filter(i => i.roles.includes(user.role));
   const rb = ROLE_BADGES[user.role];
@@ -1113,11 +1147,7 @@ const Sidebar = ({ user, currentPage, setCurrentPage, onLogout, alertsCount, onR
         ))}
       </nav>
       <div className="border-t pt-4 mt-4" style={{borderColor:'var(--hv-line)'}}>
-        <div className="mb-3">
-          <div className="text-[10px] font-bold tracking-wider mb-1 mr-1" style={{color:'var(--hv-muted)'}}>الأنظمة الأخرى</div>
-          <a href="https://home-vacation-hr.pages.dev" target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>👥 <span className="flex-1">الموارد البشرية والرواتب</span></a>
-          <a href="https://property-management-crm.pages.dev" target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>🏠 <span className="flex-1">إدارة العقارات (CRM)</span></a>
-        </div>
+        <OtherSystems uid={user.id}/>
         <div className="flex items-center gap-3 p-3 rounded-xl mb-2" style={{background:'var(--hv-cream)'}}>
           <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white" style={{background:'var(--hv-teal-deep)'}}>{user.avatar}</div>
           <div className="flex-1 min-w-0">
@@ -1169,11 +1199,7 @@ const MobileDrawer = ({ user, currentPage, setCurrentPage, onLogout, alertsCount
           ))}
         </nav>
         <div className="border-t pt-4 mt-4" style={{borderColor:'var(--hv-line)'}}>
-          <div className="mb-3">
-          <div className="text-[10px] font-bold tracking-wider mb-1 mr-1" style={{color:'var(--hv-muted)'}}>الأنظمة الأخرى</div>
-          <a href="https://home-vacation-hr.pages.dev" target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>👥 <span className="flex-1">الموارد البشرية والرواتب</span></a>
-          <a href="https://property-management-crm.pages.dev" target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>🏠 <span className="flex-1">إدارة العقارات (CRM)</span></a>
-        </div>
+          <OtherSystems uid={user.id}/>
         <div className="flex items-center gap-3 p-3 rounded-xl mb-2" style={{background:'var(--hv-cream)'}}>
             <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white" style={{background:'var(--hv-teal-deep)'}}>{user.avatar}</div>
             <div className="flex-1 min-w-0">
