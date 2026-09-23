@@ -1055,7 +1055,7 @@ const LoginPage = ({ onLogin, onReconfig }) => {
             <p className="text-white/80 leading-relaxed">منصة احترافية لإدارة عمليات الصيانة، التشطيب، المخزون، والمقايسات.</p>
             <div className="mt-6"><span className="live-indicator"><span className="live-dot"></span> متصل بقاعدة البيانات</span></div>
           </div>
-          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 7.0</div>
+          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 7.1</div>
         </div>
         <div className="p-8 lg:p-12 flex flex-col justify-center">
           <div className="lg:hidden mb-8"><HVLogo size="md"/></div>
@@ -4245,6 +4245,12 @@ const App = () => {
   const [needsConfig, setNeedsConfig] = useState(!initSupabase());
   const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState('my_day');
+  /* Deep link from a WhatsApp message: #task-218 opens that task on top of whatever page, once the data is loaded. */
+  const [linkedTaskId, setLinkedTaskId] = useState(() => { const m = (location.hash || '').match(/^#task-(\d+)$/); return m ? parseInt(m[1]) : null; });
+  useEffect(() => {
+    const onHash = () => { const m = (location.hash || '').match(/^#task-(\d+)$/); if (m) setLinkedTaskId(parseInt(m[1])); };
+    window.addEventListener('hashchange', onHash); return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   /* restore the unified session on reload (no need to log in every time) */
   useEffect(() => {
@@ -4556,6 +4562,15 @@ const App = () => {
         <MobileHeader user={currentUser} currentPage={currentPage} onMenuClick={()=>setMobileMenuOpen(true)} alertsCount={alertsCount}/>
         {loading && <div className="fixed top-16 right-1/2 z-50 bg-white px-4 py-2 rounded-full card-shadow flex items-center gap-2"><div className="loader" style={{width:14,height:14,borderWidth:2}}></div><span className="text-xs font-bold">جاري التحميل...</span></div>}
         {renderPage()}
+        {linkedTaskId && data.tasks.length > 0 && (() => {
+          const lt = data.tasks.find(x => x.id === linkedTaskId);
+          if (!lt) { showToast('المهمة T-' + String(linkedTaskId).padStart(4, '0') + ' غير موجودة أو ليست متاحة لك', 'error'); setLinkedTaskId(null); return null; }
+          return <TaskDetailModal task={lt} taskType={data.taskTypes.find(t=>t.id===lt.task_type_id)}
+            properties={data.properties} stores={data.stores} allUsers={data.users}
+            attachments={data.attachments} comments={data.comments}
+            currentUser={currentUser} onClose={()=>{ setLinkedTaskId(null); try { history.replaceState(null, '', location.pathname); } catch (e) {} }} onUpdate={updateTask}
+            onAddComment={addComment} onReloadAttachments={reloadAttachments} onDelete={deleteTask} showToast={showToast}/>;
+        })()}
       </main>
       {toasts.map(t => <Toast key={t.id} message={t.message} type={t.type} onClose={()=>removeToast(t.id)}/>)}
     </div>
