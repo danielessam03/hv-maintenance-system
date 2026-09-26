@@ -1055,7 +1055,7 @@ const LoginPage = ({ onLogin, onReconfig }) => {
             <p className="text-white/80 leading-relaxed">منصة احترافية لإدارة عمليات الصيانة، التشطيب، المخزون، والمقايسات.</p>
             <div className="mt-6"><span className="live-indicator"><span className="live-dot"></span> متصل بقاعدة البيانات</span></div>
           </div>
-          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 7.1</div>
+          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 7.2</div>
         </div>
         <div className="p-8 lg:p-12 flex flex-col justify-center">
           <div className="lg:hidden mb-8"><HVLogo size="md"/></div>
@@ -1117,6 +1117,7 @@ const HV_SYSTEMS = [
   { key:'hr',   icon:'👥', label:'الموارد البشرية والرواتب', url:'https://home-vacation-hr.pages.dev' },
   { key:'crm',  icon:'🏠', label:'إدارة العقارات (CRM)', url:'https://property-management-crm.pages.dev' },
   { key:'ops',  icon:'📋', label:'التسويق وإدخال البيانات (HV Ops)', url:'https://home-vacation-ops.pages.dev' },
+  { key:'fin',  icon:'💰', label:'الحسابات والمالية (HV Finance)', url:'https://home-vacation-finance.pages.dev' },
 ];
 const OtherSystems = ({ uid }) => {
   const access = useMySystems(uid);
