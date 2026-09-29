@@ -16,6 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script id="hv-tour-js" src="https://hv-shared.pages.dev/hv-tour.js" async onerror="var s=document.createElement('script');s.id='hv-tour-js2';s.async=true;s.src='https://hvshared-home-vacation.pages.dev/hv-tour.js';document.head.appendChild(s)"></script>
 <style>
   :root{
     --hv-teal:#1B8AA8; --hv-teal-dark:#0F6A85; --hv-teal-deep:#1B5E6F;
@@ -1055,7 +1056,7 @@ const LoginPage = ({ onLogin, onReconfig }) => {
             <p className="text-white/80 leading-relaxed">منصة احترافية لإدارة عمليات الصيانة، التشطيب، المخزون، والمقايسات.</p>
             <div className="mt-6"><span className="live-indicator"><span className="live-dot"></span> متصل بقاعدة البيانات</span></div>
           </div>
-          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 7.2</div>
+          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 7.3</div>
         </div>
         <div className="p-8 lg:p-12 flex flex-col justify-center">
           <div className="lg:hidden mb-8"><HVLogo size="md"/></div>
@@ -1124,7 +1125,7 @@ const OtherSystems = ({ uid }) => {
   const items = HV_SYSTEMS.filter(x => access && access[x.key]);
   if (items.length === 0) return null;
   return (
-    <div className="mb-3">
+    <div className="mb-3" data-tour="systems">
       <div className="text-[10px] font-bold tracking-wider mb-1 mr-1" style={{color:'var(--hv-muted)'}}>الأنظمة الأخرى</div>
       {items.map(x => <a key={x.key} href={x.url} target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>{x.icon} <span className="flex-1">{x.label}</span></a>)}
     </div>
@@ -1138,9 +1139,9 @@ const Sidebar = ({ user, currentPage, setCurrentPage, onLogout, alertsCount, onR
     <aside className="desktop-sidebar w-72 h-screen sticky top-0 flex flex-col p-5 border-l overflow-y-auto" style={{background:'#fff',borderColor:'var(--hv-line)'}}>
       <div className="mb-2"><HVLogo size="sm"/></div>
       <div className="mb-6 mr-1"><span className="live-indicator"><span className="live-dot"></span> Live</span></div>
-      <nav className="flex-1 space-y-1">
+      <nav className="flex-1 space-y-1" data-tour="menu">
         {visible.map(item => (
-          <div key={item.id} className={`nav-item ${currentPage===item.id?'active':''}`} onClick={()=>setCurrentPage(item.id)}>
+          <div key={item.id} className={`nav-item ${currentPage===item.id?'active':''}`} onClick={()=>setCurrentPage(item.id)} data-tour-nav={item.id} data-tour-label={item.label}>
             <Icon name={item.icon} size={18}/>
             <span className="flex-1">{item.label}</span>
             {item.badge > 0 && <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{item.badge}</span>}
@@ -1149,7 +1150,7 @@ const Sidebar = ({ user, currentPage, setCurrentPage, onLogout, alertsCount, onR
       </nav>
       <div className="border-t pt-4 mt-4" style={{borderColor:'var(--hv-line)'}}>
         <OtherSystems uid={user.id}/>
-        <div className="flex items-center gap-3 p-3 rounded-xl mb-2" style={{background:'var(--hv-cream)'}}>
+        <div className="flex items-center gap-3 p-3 rounded-xl mb-2" style={{background:'var(--hv-cream)'}} data-tour="profile">
           <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white" style={{background:'var(--hv-teal-deep)'}}>{user.avatar}</div>
           <div className="flex-1 min-w-0">
             <div className="font-bold text-sm truncate">{user.name}</div>
@@ -1190,9 +1191,9 @@ const MobileDrawer = ({ user, currentPage, setCurrentPage, onLogout, alertsCount
           <button onClick={onClose} className="p-2"><Icon name="x" size={20}/></button>
         </div>
         <div className="mb-4 mr-1"><span className="live-indicator"><span className="live-dot"></span> Live</span></div>
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-1" data-tour="menu">
           {visible.map(item => (
-            <div key={item.id} className={`nav-item ${currentPage===item.id?'active':''}`} onClick={()=>{setCurrentPage(item.id); onClose();}}>
+            <div key={item.id} className={`nav-item ${currentPage===item.id?'active':''}`} onClick={()=>{setCurrentPage(item.id); onClose();}} data-tour-nav={item.id} data-tour-label={item.label}>
               <Icon name={item.icon} size={18}/>
               <span className="flex-1">{item.label}</span>
               {item.badge > 0 && <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{item.badge}</span>}
@@ -1201,7 +1202,7 @@ const MobileDrawer = ({ user, currentPage, setCurrentPage, onLogout, alertsCount
         </nav>
         <div className="border-t pt-4 mt-4" style={{borderColor:'var(--hv-line)'}}>
           <OtherSystems uid={user.id}/>
-        <div className="flex items-center gap-3 p-3 rounded-xl mb-2" style={{background:'var(--hv-cream)'}}>
+        <div className="flex items-center gap-3 p-3 rounded-xl mb-2" style={{background:'var(--hv-cream)'}} data-tour="profile">
             <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white" style={{background:'var(--hv-teal-deep)'}}>{user.avatar}</div>
             <div className="flex-1 min-w-0">
               <div className="font-bold text-sm truncate">{user.name}</div>
@@ -1234,7 +1235,7 @@ const TaskCard = ({ task, taskType, locationSummary, assignees, currentUser, onO
   const elapsedDays = isMissionComplete(task) ? getActualDuration(task) : Math.max(0, Math.round((new Date(today) - new Date(startDate))/(1000*60*60*24)));
   
   return (
-    <div className={`task-card card-shadow cursor-pointer ${isLate?'late':(needsMe||needsMyConfirm)?'attention':''}`} onClick={()=>onOpen(task)}>
+    <div className={`task-card card-shadow cursor-pointer ${isLate?'late':(needsMe||needsMyConfirm)?'attention':''}`} onClick={()=>onOpen(task)} data-tour="task-card">
       <div className="p-5">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
@@ -1564,7 +1565,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content modal-content-wide card-shadow-lg" onClick={e=>e.stopPropagation()}>
-        <div className="p-6 border-b sticky top-0 bg-white z-10" style={{borderColor:'var(--hv-line)'}}>
+        <div className="p-6 border-b sticky top-0 bg-white z-10" style={{borderColor:'var(--hv-line)'}} data-tour="task-header">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-2">
@@ -1577,8 +1578,8 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
                 <Icon name={getLocationIcon(task.location_type)} size={14}/><span>{locSummary}</span>
               </div>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              {canMissionComplete && <button onClick={handleMissionComplete} className="btn-success px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 font-bold"><Icon name="check" size={12}/>تم الإنجاز</button>}
+            <div className="flex gap-2 flex-wrap" data-tour="task-actions">
+              {canMissionComplete && <button data-tour="task-complete" onClick={handleMissionComplete} className="btn-success px-3 py-1.5 rounded-lg text-xs flex items-center gap-1 font-bold"><Icon name="check" size={12}/>تم الإنجاز</button>}
               {canEditTask && !editMode && <button onClick={()=>setEditMode(true)} className="btn-ghost px-3 py-1.5 rounded-lg text-xs flex items-center gap-1"><Icon name="edit" size={12}/>تعديل</button>}
               {canReopen && <button onClick={handleReopen} className="btn-ghost px-3 py-1.5 rounded-lg text-xs flex items-center gap-1"><Icon name="refresh" size={12}/>إعادة فتح</button>}
               {canDeleteTasks(currentUser.role) && onDelete && <button onClick={async()=>{if(confirm('حذف المهمة نهائياً؟ لا يمكن التراجع.')){const ok=await onDelete(task.id);if(ok){showToast('تم حذف المهمة');onClose();}}}} className="btn-danger px-3 py-1.5 rounded-lg text-xs flex items-center gap-1"><Icon name="trash" size={12}/>حذف</button>}
@@ -1693,7 +1694,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
           
           {/* Employee switcher for admin+ - allows editing different employee's progress */}
           {canSwitchEmployee && assignedIds.length > 0 && (
-            <div className="p-3 rounded-xl border" style={{borderColor:'var(--hv-teal)',background:'rgba(27,138,168,0.04)'}}>
+            <div data-tour="task-switch" className="p-3 rounded-xl border" style={{borderColor:'var(--hv-teal)',background:'rgba(27,138,168,0.04)'}}>
               <div className="text-xs font-bold mb-2" style={{color:'var(--hv-teal-deep)'}}>
                 <Icon name="edit" size={12} className="inline ml-1"/>أنت تعدّل تقدم: {allUsers.find(u=>u.id===editingForEmployeeId)?.name}
               </div>
@@ -1717,7 +1718,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
           
           {/* Subtasks - editable list for admin+, checkable for assignees and admin+ */}
           {(isAssignee || isAdminPlus) && (
-            <div>
+            <div data-tour="task-subtasks">
               <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <h3 className="font-display font-bold text-lg">قائمة البنود {isAssignee && '(مهامك)'}</h3>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1805,7 +1806,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
           {/* Notes */}
           {(isAssignee || isAdminPlus) && (
             <>
-              <div>
+              <div data-tour="task-notes">
                 <label className="block text-sm font-semibold mb-2 flex items-center gap-2 flex-wrap">
                   {editingForEmployeeId === currentUser.id ? 'ملاحظاتي' : `ملاحظات ${allUsers.find(u=>u.id===editingForEmployeeId)?.name||''}`}
                   {canEmployeeEdit && requiresNotes && <span className="badge badge-late text-[10px]"><Icon name="alert" size={10}/>إجباري - يوجد بنود غير مكتملة</span>}
@@ -1825,7 +1826,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
           )}
           
           {/* Attachments */}
-          <div>
+          <div data-tour="task-attachments">
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
               <h3 className="font-display font-bold text-lg flex items-center gap-2"><Icon name="paperclip" size={18}/>المرفقات ({taskAttachments.length})</h3>
               {(isAssignee || ['admin','admin_supervisor','ceo','accountant'].includes(currentUser.role)) && (
@@ -1839,7 +1840,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
           </div>
           
           {/* Comments */}
-          <div>
+          <div data-tour="task-comments">
             <h3 className="font-display font-bold text-lg flex items-center gap-2 mb-3"><Icon name="comment" size={18}/>التعليقات ({taskComments.length})</h3>
             <div className="space-y-2 mb-3">
               {taskComments.map(c => {
@@ -1891,7 +1892,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
           
           {/* Admin/Supervisor revisions */}
           {['admin','admin_supervisor','ceo','accountant'].includes(currentUser.role) && showReviewPanels && (
-            <div className="p-4 rounded-xl border-2" style={{background:task.admin_revised_at?'rgba(27,138,168,0.06)':'#fff',borderColor:'var(--hv-teal)'}}>
+            <div data-tour="task-admin-review" className="p-4 rounded-xl border-2" style={{background:task.admin_revised_at?'rgba(27,138,168,0.06)':'#fff',borderColor:'var(--hv-teal)'}}>
               <div className="flex items-start gap-3" style={{cursor:canAdminRevise?'pointer':'default'}} onClick={canAdminRevise?handleAdminRevise:null}>
                 <div className={`checkbox-final ${task.admin_revised_at?'checked':''}`} style={{borderColor:'var(--hv-teal)',background:task.admin_revised_at?'var(--hv-teal)':'#fff'}}></div>
                 <div className="flex-1">
@@ -1903,7 +1904,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
           )}
           
           {['admin_supervisor','ceo'].includes(currentUser.role) && showReviewPanels && (
-            <div className="p-4 rounded-xl border-2" style={{background:task.supervisor_revised_at?'rgba(212,168,90,0.08)':'#fff',borderColor:'var(--hv-gold)'}}>
+            <div data-tour="task-senior-review" className="p-4 rounded-xl border-2" style={{background:task.supervisor_revised_at?'rgba(212,168,90,0.08)':'#fff',borderColor:'var(--hv-gold)'}}>
               <div className="flex items-start gap-3" style={{cursor:canSupervisorRevise?'pointer':'default'}} onClick={canSupervisorRevise?handleSupervisorRevise:null}>
                 <div className={`checkbox-final ${task.supervisor_revised_at?'checked':''}`}></div>
                 <div className="flex-1">
@@ -1927,7 +1928,7 @@ const TaskDetailModal = ({ task, taskType, properties, stores, allUsers, current
           </details>
         </div>
         
-        <div className="p-6 border-t sticky bottom-0 bg-white flex gap-3 flex-wrap" style={{borderColor:'var(--hv-line)'}}>
+        <div data-tour="task-submit" className="p-6 border-t sticky bottom-0 bg-white flex gap-3 flex-wrap" style={{borderColor:'var(--hv-line)'}}>
           {canEmployeeEdit && !targetAlreadySubmitted && (
             <>
               <button onClick={handleSaveProgress} disabled={saving} className="btn-ghost px-5 py-2.5 rounded-xl font-bold text-sm">حفظ التقدم</button>
@@ -2032,6 +2033,20 @@ const MyDayPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadAtta
   const myTasksSorted = useMemo(() => sortTasksByPriority(myTasks, currentUser), [myTasks, currentUser]);
   // Multi-assignee tasks where colleagues confirmed and my confirmation is the missing one
   const myConfirmQueue = useMemo(() => sortTasksByPriority(data.tasks.filter(t => needsConfirmationBy(t, currentUser)), currentUser), [data.tasks, currentUser]);
+  /* HV tour: 'open-task' opens one of this user's tasks as a read-only example (the tour overlay blocks every click); 'close' closes it */
+  useEffect(() => {
+    const onTour = (e) => {
+      const a = e && e.detail && e.detail.action;
+      if (a === 'close') { setOpenTask(null); return; }
+      if (a !== 'open-task') return;
+      const pool = isReviewer ? [...myReviewQueue, ...myTasksSorted, ...myLateTasks, ...myConfirmQueue] : [...myTasksSorted, ...myConfirmQueue, ...myLateTasks];
+      const mine = sortTasksByPriority(data.tasks.filter(t => isUserAssigned(t, currentUser.id)), currentUser);
+      const pick = pool[0] || mine[0] || data.tasks[0];
+      if (pick) setOpenTask(pick);
+    };
+    window.addEventListener('hv-tour', onTour);
+    return () => window.removeEventListener('hv-tour', onTour);
+  }, [data.tasks, currentUser, isReviewer, myReviewQueue, myTasksSorted, myLateTasks, myConfirmQueue]);
   
   const completed = myTasks.filter(t=>isTaskFullySubmittedByAll(t)).length;
   const inProgress = myTasks.filter(t=>!isTaskFullySubmittedByAll(t) && getAggregateProgress(t, data.taskTypes.find(tt=>tt.id===t.task_type_id)).checked > 0).length;
@@ -2049,7 +2064,7 @@ const MyDayPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadAtta
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <PageHeader title="يومي" subtitle={`${formatDate(today)} • مرحباً، ${currentUser.name}`}/>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" data-tour="myday-stats">
         <div className="stat-card"><div className="text-xs font-bold mb-2" style={{color:'var(--hv-muted)'}}>مهام اليوم</div><div className="font-display text-3xl font-black" style={{color:'var(--hv-teal-deep)'}}>{myTasks.length}</div></div>
         <div className="stat-card"><div className="text-xs font-bold mb-2" style={{color:'var(--hv-warning)'}}>قيد الانتظار</div><div className="font-display text-3xl font-black" style={{color:'var(--hv-warning)'}}>{pending}</div></div>
         <div className="stat-card"><div className="text-xs font-bold mb-2" style={{color:'var(--hv-teal-deep)'}}>قيد التنفيذ</div><div className="font-display text-3xl font-black" style={{color:'var(--hv-teal-deep)'}}>{inProgress}</div></div>
@@ -2057,7 +2072,7 @@ const MyDayPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadAtta
       </div>
       
       {myLateTasks.length > 0 && (
-        <div className="mb-8">
+        <div className="mb-8" data-tour="myday-late">
           <div className="flex items-center gap-3 mb-3">
             <h3 className="font-display font-bold text-xl flex items-center gap-2" style={{color:'var(--hv-danger)'}}>
               <Icon name="alert" size={20}/>{isReviewer ? 'مهام متأخرة — الجميع' : 'مهام متأخرة'} ({myLateTasks.length})
@@ -2074,7 +2089,7 @@ const MyDayPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadAtta
       )}
 
       {myConfirmQueue.length > 0 && (
-        <div className="mb-8">
+        <div className="mb-8" data-tour="myday-confirm">
           <div className="flex items-center gap-3 mb-3">
             <h3 className="font-display font-bold text-xl flex items-center gap-2" style={{color:'var(--hv-gold-dark)'}}>
               <Icon name="users" size={20}/>بانتظار تأكيدك ({myConfirmQueue.length})
@@ -2186,7 +2201,7 @@ const UpcomingPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadA
             <button onClick={()=>{setShowPast(true);setSelectedDay(null);}} className={`tab-btn ${showPast?'active':''}`}>الكل (سابقة + قادمة)</button>
           </div>
         }/>
-      <div className="bg-white rounded-2xl p-4 mb-6 card-shadow">
+      <div className="bg-white rounded-2xl p-4 mb-6 card-shadow" data-tour="upcoming-strip">
         <div className="flex gap-2 overflow-x-auto pb-2">
           <div className={`day-chip ${!selectedDay?'active':''}`} onClick={()=>setSelectedDay(null)}>
             <div className="text-xs opacity-70">الكل</div><div className="font-bold text-base mt-1">{tasksToShow.length}</div><div className="text-xs mt-1">مهمة</div>
@@ -2344,7 +2359,7 @@ const WeeklyPlannerPage = ({ data, currentUser, onUpdateTask, onAddComment, onRe
     <div className="p-8 max-w-[1400px] mx-auto">
       <PageHeader title="مخطط الأسبوع" subtitle="اسحب المهام بين الأيام لإعادة الجدولة"
         action={
-          <div className="flex gap-2">
+          <div className="flex gap-2" data-tour="week-nav">
             <button onClick={()=>setWeekOffset(weekOffset-1)} className="btn-ghost px-3 py-2 rounded-xl"><Icon name="arrowRight" size={16}/></button>
             <button onClick={()=>setWeekOffset(0)} className="btn-primary px-4 py-2 rounded-xl font-bold text-sm">اليوم</button>
             <button onClick={()=>setWeekOffset(weekOffset+1)} className="btn-ghost px-3 py-2 rounded-xl"><Icon name="arrowLeft" size={16}/></button>
@@ -2364,7 +2379,7 @@ const WeeklyPlannerPage = ({ data, currentUser, onUpdateTask, onAddComment, onRe
         </div>
       )}
       
-      <div className="week-grid grid grid-cols-7 gap-2">
+      <div className="week-grid grid grid-cols-7 gap-2" data-tour="week-grid">
         {weekDays.map(day => {
           const isToday = day === today;
           return (
@@ -2433,18 +2448,31 @@ const AllTasksPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadA
     return true;
   }), [data, filterStatus, filterEmployee, searchQuery, filterDateFrom, filterDateTo, mode, currentUser]);
   const filtered = useMemo(() => sortTasksByPriority(filteredRaw, currentUser), [filteredRaw, currentUser]);
+  /* HV tour: 'open-task' opens a task as a read-only example for the review steps (preferably one waiting for this
+     user's review, so the review boxes are visible); 'close' closes it */
+  useEffect(() => {
+    const onTour = (e) => {
+      const a = e && e.detail && e.detail.action;
+      if (a === 'close') { setOpenTask(null); return; }
+      if (a !== 'open-task') return;
+      const pick = filtered.find(t => needsReviewBy(t, currentUser)) || filtered.find(t => isReadyForAdminReview(t) || isAwaitingSupervisor(t)) || filtered[0];
+      if (pick) setOpenTask(pick);
+    };
+    window.addEventListener('hv-tour', onTour);
+    return () => window.removeEventListener('hv-tour', onTour);
+  }, [filtered, currentUser]);
   const assignableForFilter = data.users.filter(u => u.role !== 'ceo' && u.is_active !== false);
   
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <PageHeader title={pageTitle} subtitle={`${filtered.length} مهمة`}/>
-      <div className="bg-white rounded-2xl p-4 mb-6 card-shadow">
+      <div className="bg-white rounded-2xl p-4 mb-6 card-shadow" data-tour="task-filters">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <div className="relative">
             <Icon name="search" size={16} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"/>
             <input type="text" value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="ابحث بكود المهمة (T-0218) أو النوع أو الموقع..." className="input-field pr-10"/>
           </div>
-          <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="input-field">
+          <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="input-field" data-tour="task-status">
             <option value="all">جميع الحالات</option>
             <option value="needs_me">⚠ تحتاج إجراءك (متأخرة أو بانتظار مراجعتك)</option>
             <option value="late">متأخرة</option>
@@ -2474,7 +2502,7 @@ const AllTasksPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadA
       {filtered.length===0 ? (
         <div className="bg-white rounded-2xl p-16 text-center card-shadow"><Icon name="tasks" size={32} className="mx-auto mb-4 opacity-30"/><p style={{color:'var(--hv-muted)'}}>لا توجد مهام</p></div>
       ) : (
-        <div>
+        <div data-tour="task-groups">
           {TASK_GROUPS.map(g => {
             const groupTasks = filtered.filter(t => taskPriority(t) === g.key);
             if (groupTasks.length === 0) return null;
@@ -2581,12 +2609,12 @@ const CreateTaskPage = ({ data, currentUser, onCreateTask, setCurrentPage, showT
     <div className="p-8 max-w-4xl mx-auto">
       <PageHeader title="إنشاء مهمة جديدة" subtitle="املأ تفاصيل المهمة"/>
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-8 card-shadow space-y-6">
-        <div>
+        <div data-tour="ct-type">
           <label className="block text-sm font-bold mb-2">نوع المهمة *</label>
           <SearchableSelect options={data.taskTypes} value={taskTypeId} onChange={setTaskTypeId} displayKey="title" placeholder="اختر نوع المهمة"
             onAddNew={onAddTaskType ? async (name)=>await onAddTaskType(name) : null} addNewLabel="نوع مهمة جديد"/>
         </div>
-        <div>
+        <div data-tour="ct-location">
           <label className="block text-sm font-bold mb-3">أين ستتم المهمة؟ *</label>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {Object.entries(LOCATION_TYPES).map(([key, lt]) => (
@@ -2626,7 +2654,7 @@ const CreateTaskPage = ({ data, currentUser, onCreateTask, setCurrentPage, showT
         </div>
         
         {/* Multi-assign - assignable users by role */}
-        <div>
+        <div data-tour="ct-assignees">
           <label className="block text-sm font-bold mb-2">المسؤولون * <span className="text-xs font-normal" style={{color:'var(--hv-muted)'}}>(اختر واحد أو أكثر)</span></label>
           {assignableUsers.length === 0 ? (
             <div className="text-sm p-3 rounded-xl" style={{background:'rgba(178,58,58,0.06)',color:'var(--hv-danger)'}}>ليس لديك صلاحية تعيين مهام لأي شخص</div>
@@ -2649,7 +2677,7 @@ const CreateTaskPage = ({ data, currentUser, onCreateTask, setCurrentPage, showT
           {assignedToMulti.length > 0 && <div className="text-xs mt-2" style={{color:'var(--hv-success)'}}>✓ {assignedToMulti.length} مختار</div>}
         </div>
         
-        <div className="p-4 rounded-xl border" style={{borderColor:'var(--hv-line)',background:isRange?'rgba(27,138,168,0.04)':'#fff'}}>
+        <div data-tour="ct-dates" className="p-4 rounded-xl border" style={{borderColor:'var(--hv-line)',background:isRange?'rgba(27,138,168,0.04)':'#fff'}}>
           <label className="flex items-center gap-2 cursor-pointer mb-3">
             <input type="checkbox" checked={isRange} onChange={e=>{setIsRange(e.target.checked); if(!e.target.checked) setEndDate(startDate);}}/>
             <Icon name="calendarDays" size={16} style={{color:'var(--hv-teal-deep)'}}/>
@@ -2711,7 +2739,7 @@ const CreateTaskPage = ({ data, currentUser, onCreateTask, setCurrentPage, showT
         </div>
         
         {selectedTT && (
-          <div className="p-4 rounded-xl border" style={{borderColor:'var(--hv-line)',background:'var(--hv-cream)'}}>
+          <div data-tour="ct-subtasks" className="p-4 rounded-xl border" style={{borderColor:'var(--hv-line)',background:'var(--hv-cream)'}}>
             <div className="text-xs font-bold mb-3" style={{color:'var(--hv-teal-deep)'}}>اختر البنود لهذه المهمة (يمكن إضافة بنود مخصصة):</div>
             <div className="space-y-2">
               {(selectedTT.subtasks||[]).map((s, i) => {
@@ -2746,7 +2774,7 @@ const CreateTaskPage = ({ data, currentUser, onCreateTask, setCurrentPage, showT
           <label className="block text-sm font-bold mb-2">ملاحظات الإدارة</label>
           <textarea value={adminNotes} onChange={e=>setAdminNotes(e.target.value)} className="input-field" rows={3}/>
         </div>
-        <div className="flex gap-3 pt-4">
+        <div className="flex gap-3 pt-4" data-tour="ct-submit">
           <button type="button" onClick={()=>setCurrentPage('all_tasks')} className="btn-ghost px-6 py-3 rounded-xl font-bold">إلغاء</button>
           <button type="submit" disabled={creating} className="btn-primary flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
             <Icon name="plus" size={18}/>{creating?'جاري الإنشاء...':'إنشاء المهمة'}
@@ -2822,7 +2850,7 @@ const InvoiceFormModal = ({ invoice, properties, allInvoices, currentUser, onClo
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100"><Icon name="x" size={20}/></button>
           </div>
         </div>
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4" data-tour="inv-form">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold mb-1">رقم المقايسة</label>
@@ -2835,7 +2863,7 @@ const InvoiceFormModal = ({ invoice, properties, allInvoices, currentUser, onClo
                 {properties.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
-            <div>
+            <div data-tour="inv-version">
               <label className="block text-xs font-bold mb-1">نوع المقايسة *</label>
               <select value={form.invoice_version} onChange={e=>setForm({...form,invoice_version:e.target.value, parent_invoice_id: e.target.value==='preliminary'?null:form.parent_invoice_id})} className="input-field">
                 <option value="preliminary">مبدئية</option>
@@ -2959,7 +2987,7 @@ const InvoiceViewModal = ({ invoice, parent, properties, currentUser, onClose, o
         </div>
         
         {/* Approval Flow Section (not printed) */}
-        <div className="p-6 no-print border-b" style={{borderColor:'var(--hv-line)',background:'var(--hv-cream)'}}>
+        <div data-tour="inv-gates" className="p-6 no-print border-b" style={{borderColor:'var(--hv-line)',background:'var(--hv-cream)'}}>
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <h3 className="font-display font-bold text-lg" style={{color:'var(--hv-teal-deep)'}}>مسار الاعتماد</h3>
             {fullyApproved && <span className="badge badge-done"><Icon name="check" size={12}/>معتمد بالكامل</span>}
@@ -3008,7 +3036,7 @@ const InvoiceViewModal = ({ invoice, parent, properties, currentUser, onClose, o
             </div>
             
             {/* CEO */}
-            <div className="p-3 rounded-xl border-2" style={{borderColor:ceoApproved?'var(--hv-success)':'var(--hv-line)', background:ceoApproved?'rgba(46,125,91,0.06)':'#fff', opacity:!supervisorApproved?0.5:1}}>
+            <div data-tour="gate-ceo" className="p-3 rounded-xl border-2" style={{borderColor:ceoApproved?'var(--hv-success)':'var(--hv-line)', background:ceoApproved?'rgba(46,125,91,0.06)':'#fff', opacity:!supervisorApproved?0.5:1}}>
               <div className="text-xs font-bold mb-1" style={{color:'var(--hv-muted)'}}>4. الرئيس التنفيذي</div>
               {ceoApproved ? (
                 <>
@@ -3096,7 +3124,7 @@ const InvoiceCompareModal = ({ preliminary, final, properties, onClose }) => {
   
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content modal-content-xwide" onClick={e=>e.stopPropagation()}>
+      <div className="modal-content modal-content-xwide" onClick={e=>e.stopPropagation()} data-tour="inv-compare">
         <div className="p-6 border-b flex justify-between items-center" style={{borderColor:'var(--hv-line)'}}>
           <div>
             <h2 className="font-display text-2xl font-black" style={{color:'var(--hv-teal-deep)'}}>مقارنة المقايسة المبدئية والنهائية</h2>
@@ -3156,13 +3184,32 @@ const InvoicesPage = ({ data, currentUser, onSaveInvoice, onDeleteInvoice, showT
     setOpenInvoice(null);
     setComparing({ preliminary: parent, final: inv });
   };
+  /* HV tour: open the new-estimate form / an estimate / a comparison so the tour can point at them (nothing is saved); 'close' closes them */
+  useEffect(() => {
+    const onTour = (e) => {
+      const a = e && e.detail && e.detail.action;
+      const invs = data.invoices || [];
+      const parentOf = (i) => invs.find(p => p.id === parseInt(i.parent_invoice_id));
+      if (a === 'close') { setCreating(false); setOpenInvoice(null); setComparing(null); }
+      else if (a === 'open-invoice-form') { setOpenInvoice(null); setComparing(null); setCreating(true); }
+      else if (a === 'open-invoice') {
+        const inv = invs.find(i => i.invoice_version === 'final' && i.parent_invoice_id && parentOf(i)) || invs[0];
+        if (inv) { setCreating(false); setComparing(null); setOpenInvoice(inv); }
+      } else if (a === 'open-invoice-compare') {
+        const fin = invs.find(i => i.invoice_version === 'final' && i.parent_invoice_id && parentOf(i));
+        if (fin) { setCreating(false); setOpenInvoice(null); setComparing({ preliminary: parentOf(fin), final: fin }); }
+      }
+    };
+    window.addEventListener('hv-tour', onTour);
+    return () => window.removeEventListener('hv-tour', onTour);
+  }, [data.invoices]);
   
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <PageHeader title="المقايسات" subtitle={`${data.invoices.length} مقايسة`}
         action={<button onClick={()=>setCreating(true)} className="btn-primary px-5 py-2.5 rounded-xl font-bold flex items-center gap-2"><Icon name="plus" size={16}/>مقايسة جديدة</button>}/>
       
-      <div className="flex gap-2 mb-4 no-print">
+      <div className="flex gap-2 mb-4 no-print" data-tour="inv-filter">
         <button onClick={()=>setFilter('all')} className={`tab-btn ${filter==='all'?'active':''}`}>الكل ({data.invoices.length})</button>
         <button onClick={()=>setFilter('preliminary')} className={`tab-btn ${filter==='preliminary'?'active':''}`}>مبدئية ({data.invoices.filter(i=>i.invoice_version==='preliminary').length})</button>
         <button onClick={()=>setFilter('final')} className={`tab-btn ${filter==='final'?'active':''}`}>نهائية ({data.invoices.filter(i=>i.invoice_version==='final').length})</button>
@@ -3336,7 +3383,7 @@ const KPIPage = ({ data, currentUser }) => {
         }/>
       
       {/* Period filter bar */}
-      <div className="bg-white rounded-2xl p-4 mb-6 card-shadow">
+      <div className="bg-white rounded-2xl p-4 mb-6 card-shadow" data-tour="kpi-period">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex gap-2 flex-wrap">
             {[{d:7,l:'أسبوع'},{d:30,l:'شهر'},{d:90,l:'3 أشهر'},{d:365,l:'سنة'}].map(p => (
@@ -3360,7 +3407,7 @@ const KPIPage = ({ data, currentUser }) => {
       </div>
       
       {/* Overall KPI cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" data-tour="kpi-overall">
         <div className="kpi-card">
           <div className="text-xs opacity-80 mb-2 relative z-10 flex items-center gap-1"><Icon name="target" size={12}/>معدل الإنجاز</div>
           <div className="font-display text-4xl font-black relative z-10">{stats.overallCompletion}%</div>
@@ -3384,7 +3431,7 @@ const KPIPage = ({ data, currentUser }) => {
       </div>
       
       {/* Per-employee KPIs */}
-      <div className="bg-white rounded-2xl p-6 card-shadow mb-6">
+      <div className="bg-white rounded-2xl p-6 card-shadow mb-6" data-tour="kpi-employees">
         <h3 className="font-display font-bold text-xl mb-4" style={{color:'var(--hv-teal-deep)'}}>أداء الموظفين</h3>
         <div className="space-y-4">
           {filteredEmpStats.map(s => (
@@ -3444,7 +3491,7 @@ const KPIPage = ({ data, currentUser }) => {
       </div>
       
       {/* Supervision KPIs: how fast reviews are confirmed */}
-      <div className="bg-white rounded-2xl p-6 card-shadow mb-6">
+      <div className="bg-white rounded-2xl p-6 card-shadow mb-6" data-tour="kpi-supervision">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
           <h3 className="font-display font-bold text-xl" style={{color:'var(--hv-teal-deep)'}}>أداء الإشراف والمراجعة</h3>
           <div className="flex items-center gap-2 flex-wrap">
@@ -3575,7 +3622,7 @@ const ReportsPage = ({ data, currentUser }) => {
             <button onClick={handlePrint} className="btn-gold px-4 py-2 rounded-xl font-bold flex items-center gap-2"><Icon name="print" size={16}/>طباعة</button>
           }/>
         <div className="bg-white rounded-2xl p-4 mb-6 card-shadow">
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-wrap items-end gap-3" data-tour="rep-filters">
             <div className="flex gap-2 flex-wrap">
               {[{d:1,l:'اليوم'},{d:7,l:'أسبوع'},{d:30,l:'شهر'},{d:90,l:'3 أشهر'}].map(p => (
                 <button key={p.d} onClick={()=>{setPeriod(p.d);setCustomFrom('');setCustomTo('');}}
@@ -3691,7 +3738,7 @@ const AuditPage = ({ data, currentUser }) => {
   return (
     <div className="p-8 max-w-5xl mx-auto">
       <PageHeader title="سجل التدقيق" subtitle={`${allEvents.length} حدث`}/>
-      <div className="bg-white rounded-2xl p-6 card-shadow">
+      <div className="bg-white rounded-2xl p-6 card-shadow" data-tour="audit-list">
         <div className="space-y-4">
           {allEvents.slice(0, 200).map((e, i) => (
             <div key={i} className="audit-line pr-6">
@@ -3716,7 +3763,7 @@ const AlertsPage = ({ data, currentUser, onUpdateTask, onAddComment, onReloadAtt
   const needsSupervisorRevise = sortTasksByPriority(data.tasks.filter(t => isAwaitingSupervisor(t)), currentUser);
   
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-8 max-w-7xl mx-auto" data-tour="alerts-page">
       <PageHeader title="التنبيهات" subtitle={`${lateTasks.length+needsAdminRevise.length+needsSupervisorRevise.length} تنبيه`}/>
       {[
         {title:`مهام متأخرة (${lateTasks.length})`,tasks:lateTasks,color:'var(--hv-danger)'},
@@ -3764,7 +3811,7 @@ const CredentialsPage = ({ data, currentUser, showToast }) => {
           <div style={{color:'var(--hv-muted)'}}>كل موظف له اسم مستخدم وكلمة مرور واحدة لكل الأنظمة. تعيين كلمات المرور واختيار الأنظمة المسموح بها يتم من نظام الموارد البشرية فقط؛ هذه القائمة تعرض أسماء المستخدمين والأدوار.</div>
         </div>
       </div>
-      <div className="bg-white rounded-2xl card-shadow overflow-hidden">
+      <div className="bg-white rounded-2xl card-shadow overflow-hidden" data-tour="cred-table">
         <div className="table-wrapper">
         <table className="w-full text-sm" style={{minWidth:'500px'}}>
           <thead style={{background:'var(--hv-cream)'}}>
@@ -3824,7 +3871,7 @@ const MeetingFormModal = ({ meeting, allUsers, currentUser, onClose, onSave, sho
           <h2 className="font-display text-2xl font-black" style={{color:'var(--hv-teal-deep)'}}>{meeting?'تعديل':'إنشاء'} اجتماع</h2>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100"><Icon name="x" size={20}/></button>
         </div>
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-4" data-tour="meet-form">
           <div>
             <label className="block text-xs font-bold mb-1">عنوان الاجتماع *</label>
             <input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} className="input-field" placeholder="مثال: اجتماع متابعة المشاريع"/>
@@ -3922,7 +3969,7 @@ const MeetingViewModal = ({ meeting, allUsers, currentUser, onClose, onUpdate, s
               {attendeeUsers.length===0 && <span className="text-sm" style={{color:'var(--hv-muted)'}}>لم يُحدد الحضور</span>}
             </div>
           </div>
-          <div>
+          <div data-tour="meet-notes">
             <div className="text-xs font-bold mb-2" style={{color:'var(--hv-teal-deep)'}}>محضر الاجتماع والملاحظات ({notes.length})</div>
             <div className="space-y-2 mb-3">
               {notes.map((n, i) => {
@@ -3958,6 +4005,17 @@ const MeetingsPage = ({ data, currentUser, onSaveMeeting, onUpdateMeeting, onDel
   
   const sorted = useMemo(() => [...(data.meetings||[])].sort((a,b)=>new Date(b.meeting_date)-new Date(a.meeting_date)), [data.meetings]);
   const liveViewing = viewing ? (data.meetings||[]).find(m=>m.id===viewing.id) || viewing : null;
+  /* HV tour: open the meeting form / the latest meeting so the tour can point at them (nothing is saved); 'close' closes them */
+  useEffect(() => {
+    const onTour = (e) => {
+      const a = e && e.detail && e.detail.action;
+      if (a === 'close') { setCreating(false); setViewing(null); }
+      else if (a === 'open-meeting-form') { setViewing(null); setCreating(true); }
+      else if (a === 'open-meeting' && sorted[0]) { setCreating(false); setViewing(sorted[0]); }
+    };
+    window.addEventListener('hv-tour', onTour);
+    return () => window.removeEventListener('hv-tour', onTour);
+  }, [sorted]);
   
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -4031,7 +4089,7 @@ const TaskTypesSettings = ({ data, onCreate, onUpdate, onDelete, showToast }) =>
     );
   };
   return (
-    <div>
+    <div data-tour="set-task-types">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-display font-bold text-lg">أنواع المهام ({data.taskTypes.length})</h3>
         {!creating && <button onClick={()=>setCreating(true)} className="btn-primary px-4 py-2 rounded-xl font-bold flex items-center gap-2"><Icon name="plus" size={14}/>جديد</button>}
@@ -4074,7 +4132,7 @@ const PropertiesSettings = ({ data, onCreate, onUpdate, onDelete, showToast }) =
     );
   };
   return (
-    <div>
+    <div data-tour="set-properties">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-display font-bold text-lg">الوحدات العقارية ({data.properties.length})</h3>
         {!creating && <button onClick={()=>setCreating(true)} className="btn-primary px-4 py-2 rounded-xl font-bold flex items-center gap-2"><Icon name="plus" size={14}/>جديدة</button>}
@@ -4116,7 +4174,7 @@ const StoresSettings = ({ data, onCreate, onUpdate, onDelete, showToast }) => {
     );
   };
   return (
-    <div>
+    <div data-tour="set-stores">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-display font-bold text-lg">المخازن ({data.stores.length})</h3>
         {!creating && <button onClick={()=>setCreating(true)} className="btn-primary px-4 py-2 rounded-xl font-bold flex items-center gap-2"><Icon name="plus" size={14}/>جديد</button>}
@@ -4181,7 +4239,7 @@ const UsersSettings = ({ data, currentUser, onCreate, onUpdate, onDelete, showTo
     );
   };
   return (
-    <div>
+    <div data-tour="set-users">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-display font-bold text-lg">المستخدمون ({data.users.length})</h3>
         <a href="https://home-vacation-hr.pages.dev" target="_blank" rel="noreferrer" className="btn-primary px-4 py-2 rounded-xl font-bold flex items-center gap-2" style={{textDecoration:'none'}}><Icon name="plus" size={14}/>جديد (من الموارد البشرية)</a>
@@ -4224,6 +4282,16 @@ const UsersSettings = ({ data, currentUser, onCreate, onUpdate, onDelete, showTo
 
 const SettingsPage = ({ data, currentUser, onCreateTaskType, onUpdateTaskType, onDeleteTaskType, onCreateProperty, onUpdateProperty, onDeleteProperty, onCreateStore, onUpdateStore, onDeleteStore, onCreateUser, onUpdateUser, onDeleteUser, showToast }) => {
   const [tab, setTab] = useState('task_types');
+  /* HV tour: switch the settings tab the current step talks about (the users tab stays CEO-only) */
+  useEffect(() => {
+    const onTour = (e) => {
+      const a = e && e.detail && e.detail.action;
+      const map = { 'settings-task-types':'task_types', 'settings-properties':'properties', 'settings-stores':'stores', 'settings-users':'users' };
+      if (map[a] && (map[a] !== 'users' || currentUser.role === 'ceo')) setTab(map[a]);
+    };
+    window.addEventListener('hv-tour', onTour);
+    return () => window.removeEventListener('hv-tour', onTour);
+  }, [currentUser.role]);
   return (
     <div className="p-8 max-w-5xl mx-auto">
       <PageHeader title="الإعدادات" subtitle="إدارة بيانات النظام"/>
@@ -4240,6 +4308,211 @@ const SettingsPage = ({ data, currentUser, onCreateTaskType, onUpdateTaskType, o
     </div>
   );
 };
+
+/* HV-TOUR-STEPS-START — keep in sync with the screens: every change to a screen updates its step here */
+/* Guide tour (shared engine: https://hv-shared.pages.dev/hv-tour.js). A step is { c: chapter, page: nav key, target: data-tour
+   anchor, action: 'hv-tour' event the app handles (open-menu, open-task, open-invoice-form, open-invoice, open-invoice-compare,
+   open-meeting-form, open-meeting, settings-*) , en/ar: [title, body] }. Steps whose page is not in the user's menu are skipped,
+   so every role only sees what it can use. The tour never writes data: its overlay blocks every click on the app. */
+const HV_TOUR_CHAPTERS = [
+  ['start', 'Getting started', 'البداية'],
+  ['lists', 'Task lists', 'قوائم المهام'],
+  ['create', 'Creating a task', 'إنشاء مهمة'],
+  ['work', 'Working on a task', 'تنفيذ المهمة وتسليمها'],
+  ['review', 'Review and completion', 'المراجعة والإنجاز'],
+  ['plan', 'Planning and meetings', 'التخطيط والاجتماعات'],
+  ['inv', 'Estimates (مقايسات)', 'المقايسات'],
+  ['perf', 'KPIs, reports and audit', 'الأداء والتقارير والتدقيق'],
+  ['settings', 'Settings and accounts', 'الإعدادات والحسابات'],
+  ['roles', 'Roles and other systems', 'الصلاحيات والأنظمة الأخرى'],
+];
+const HV_TOUR_STEPS = [
+  /* ---------- Getting started ---------- */
+  { c:'start', page:'my_day', target:null,
+    en:[`Welcome to Home Vacation Maintenance`, `This system runs all maintenance, finishing and store work: every job is a task with a checklist, attachments and a clear review chain, plus estimates (مقايسات) with four approvals. This tour shows every screen your role can open.`],
+    ar:[`أهلاً بك في نظام إدارة الصيانة`, `هذا النظام يدير كل أعمال الصيانة والتشطيب والمخازن: كل عمل عبارة عن مهمة لها بنود ومرفقات ومسار مراجعة واضح، بالإضافة إلى المقايسات واعتماداتها الأربعة. ستعرّفك هذه الجولة على كل شاشة متاحة لدورك.`] },
+  { c:'start', page:'my_day', target:'menu', action:'open-menu',
+    en:[`The menu`, `The menu lists only the pages your role may open. On a phone open it with the ☰ button at the top. The red number next to "Alerts" = late tasks + tasks waiting for your review.`],
+    ar:[`القائمة الرئيسية`, `تعرض القائمة الصفحات المسموحة لدورك فقط، وعلى الموبايل تفتحها من زر ☰ أعلى الشاشة. الرقم الأحمر بجوار «التنبيهات» هو عدد المهام المتأخرة مع المهام التي تنتظر مراجعتك.`] },
+  { c:'start', page:'my_day', target:'myday-stats',
+    en:[`My Day`, `Your home page. The counters show today's tasks assigned to you: pending, in progress and completed. Below them is the list "Today's tasks", ordered by urgency — tap a card to open it.`],
+    ar:[`يومي`, `هذه صفحتك الرئيسية. العدادات تعرض مهام اليوم المسندة إليك: قيد الانتظار وقيد التنفيذ والمكتملة، وتحتها قائمة «مهام اليوم» مرتبة حسب الأولوية؛ اضغط على أي كارت لفتح المهمة.`] },
+  { c:'start', page:'my_day', target:'myday-late',
+    en:[`Urgent things first`, `Above today's list you see what needs you: late tasks (managers see everyone's, employees their own), "Waiting for your confirmation" and "Waiting for your review". Managers see the six most urgent here and the rest under Alerts.`],
+    ar:[`العاجل أولاً`, `فوق مهام اليوم تظهر الأقسام التي تحتاجك: المهام المتأخرة (المدير يرى متأخرات الجميع والموظف يرى متأخراته)، ثم «بانتظار تأكيدك» و«بانتظار مراجعتك». يظهر للإدارة هنا أهم ست مهام، والباقي في صفحة التنبيهات.`] },
+  { c:'start', page:'upcoming', target:'upcoming-strip',
+    en:[`My tasks (past and upcoming)`, `Employees see all their tasks here, grouped by day. The day strip shows the next 14 days with a count per day — tap a day to filter. Choose "All (past + upcoming)" to see earlier tasks too.`],
+    ar:[`مهامي (سابقة وقادمة)`, `هنا يرى الموظف كل مهامه مجمعة حسب اليوم. شريط الأيام يعرض الأربعة عشر يوماً القادمة وعدد المهام في كل يوم؛ اضغط على يوم لعرض مهامه فقط، واختر «الكل (سابقة + قادمة)» لعرض المهام السابقة أيضاً.`] },
+
+  /* ---------- Task lists ---------- */
+  { c:'lists', page:'all_tasks', target:'task-filters',
+    en:[`All tasks`, `Every task in the company. Search by task code (e.g. T-0218, also used in WhatsApp messages), task type or unit/store name, filter by status, person and date range; "Clear filters" resets the view.`],
+    ar:[`جميع المهام`, `كل مهام الشركة في مكان واحد. ابحث بكود المهمة (مثل T-0218 وهو نفس الكود في رسائل الواتساب) أو بنوع المهمة أو اسم الوحدة أو المخزن، وفلتر بالحالة والشخص والفترة، وزر «مسح الفلاتر» يعيد العرض كاملاً.`] },
+  { c:'lists', page:'all_tasks', target:'task-status',
+    en:[`Task statuses`, `A task moves through: pending → in progress → partial submit → awaiting admin review → awaiting senior review → approved. The filter "Needs your action" shows late tasks plus everything waiting for your review or confirmation.`],
+    ar:[`حالات المهمة`, `تمر المهمة بالحالات: قيد الانتظار ← قيد التنفيذ ← تسليم جزئي ← بانتظار مراجعة الإدارة ← بانتظار المراجعة العليا ← معتمدة نهائياً. واختيار «تحتاج إجراءك» يعرض المتأخر وكل ما ينتظر مراجعتك أو تأكيدك.`] },
+  { c:'lists', page:'all_tasks', target:'task-groups',
+    en:[`Priority order`, `Every list uses the same order: Late (red, always on top) → Not done yet → Awaiting review and supervision → Approved. Inside a group, what waits for you comes first, then the nearest deadline; the most overdue late task is first.`],
+    ar:[`ترتيب الأولوية`, `كل القوائم بنفس الترتيب: متأخرة (بالأحمر وفي الأعلى دائماً) ← لم تُنجز بعد ← بانتظار المراجعة والإشراف ← معتمدة نهائياً. داخل كل مجموعة يأتي أولاً ما ينتظرك، ثم الأقرب في الموعد، وأقدم متأخرة تظهر أولاً.`] },
+  { c:'lists', page:'all_tasks', target:'task-card',
+    en:[`Reading a task card`, `Code, status, type, location, assignees, dates and a ring with the % of items done. Red with "Late N days" = the end date passed and the work is still not delivered; a gold frame = it waits for you. Other badges: "confirmed 2/3", recurring, multi-day, reopened.`],
+    ar:[`قراءة كارت المهمة`, `الكارت يعرض الكود والحالة والنوع والموقع والمسؤولين والتواريخ ودائرة بنسبة البنود المنجزة. اللون الأحمر مع «متأخرة N يوم» يعني أن تاريخ النهاية مرّ ولم يُسلَّم العمل، والإطار الذهبي يعني أنها تنتظرك. وشارات أخرى: «أكّد 2/3» ومتكررة ومتعددة الأيام وأعيد فتحها.`] },
+  { c:'lists', page:'my_tasks', target:'task-filters',
+    en:[`My tasks`, `The same screen, limited to the tasks assigned to you personally — follow your own work separately from the team's.`],
+    ar:[`مهامي`, `نفس شاشة المهام لكنها تعرض فقط المهام المسندة إليك شخصياً، لتتابع شغلك بعيداً عن مهام الفريق.`] },
+  { c:'lists', page:'team_tasks', target:'task-filters',
+    en:[`Team tasks`, `Tasks that involve at least one person other than you. Pick a person in the filter to see one employee's workload.`],
+    ar:[`مهام الفريق`, `المهام التي يشارك فيها شخص آخر غيرك على الأقل. اختر شخصاً من الفلتر لتتابع حِمل العمل لموظف معيّن.`] },
+
+  /* ---------- Creating a task ---------- */
+  { c:'create', page:'create_task', target:'ct-type',
+    en:[`1. Task type`, `Choose the kind of work. Each type carries a default checklist that loads automatically. If the type does not exist yet, add it right from this list.`],
+    ar:[`1. نوع المهمة`, `اختر نوع العمل، ولكل نوع قائمة بنود افتراضية تُحمَّل تلقائياً. لو النوع غير موجود يمكنك إضافته مباشرة من نفس القائمة.`] },
+  { c:'create', page:'create_task', target:'ct-location',
+    en:[`2. Where will it happen?`, `Six options: in a unit, in a store, store → unit, unit → store, store → store, or a general task. The form then asks only for the unit/stores that option needs; new units and stores can be added inline.`],
+    ar:[`2. مكان المهمة`, `ستة اختيارات: داخل وحدة، داخل مخزن، من مخزن إلى وحدة، من وحدة إلى مخزن، من مخزن إلى مخزن، أو مهمة عامة. بعدها يطلب النموذج الوحدة أو المخازن اللازمة فقط، ويمكن إضافة وحدة أو مخزن جديد مباشرة.`] },
+  { c:'create', page:'create_task', target:'ct-assignees',
+    en:[`3. Assign one or more people`, `Tick everyone who will work on it. With several assignees each one must confirm their share before the task can be reviewed. Admins assign employees, accountants, the operations manager and themselves; the operations manager, CEO and accountant can assign anyone.`],
+    ar:[`3. المسؤولون`, `حدّد كل من سيعمل على المهمة؛ ومع تعدد المسؤولين يجب أن يؤكد كل واحد نصيبه قبل أن تنتقل المهمة للمراجعة. المدير يسند للموظفين والمحاسبين ومسؤول العمليات ولنفسه، ومسؤول العمليات والرئيس التنفيذي والمحاسب يسندون لأي شخص.`] },
+  { c:'create', page:'create_task', target:'ct-dates',
+    en:[`4. Dates and repetition`, `One day by default; tick "multi-day task" to set a start and an expected end date (the task is late only after the end date). For routine work tick "recurring task": daily, every 2 or 3 days, weekly, every two weeks, monthly or a custom number of days — always or once.`],
+    ar:[`4. التاريخ والتكرار`, `المهمة ليوم واحد افتراضياً، وفعّل «مهمة متعددة الأيام» لتحديد تاريخ بداية ونهاية متوقع (ولا تُعتبر متأخرة إلا بعد تاريخ النهاية). وللأعمال الدورية فعّل «مهمة متكررة»: يومياً، كل يومين، كل 3 أيام، أسبوعياً، كل أسبوعين، شهرياً أو عدد أيام تحدده، دائماً أو لمرة واحدة.`] },
+  { c:'create', page:'create_task', target:'ct-subtasks',
+    en:[`5. The checklist`, `After you pick the type its items appear ticked: untick what does not apply and add custom items for this task only. At least one item is required.`],
+    ar:[`5. بنود المهمة`, `بعد اختيار النوع تظهر بنوده محددة: ألغِ ما لا يلزم وأضف بنوداً مخصصة لهذه المهمة فقط. لا بد من بند واحد على الأقل.`] },
+  { c:'create', page:'create_task', target:'ct-submit',
+    en:[`6. Notes and create`, `Write instructions in "Admin notes" — assignees see them in gold at the top of the task — then press "Create task". It appears in the assignees' My Day on its date.`],
+    ar:[`6. الملاحظات والإنشاء`, `اكتب تعليماتك في «ملاحظات الإدارة» وستظهر للمسؤولين باللون الذهبي أعلى المهمة، ثم اضغط «إنشاء المهمة»، فتظهر في صفحة «يومي» لكل مسؤول في تاريخها.`] },
+
+  /* ---------- Working on a task (the tour opens one of the user's tasks, read-only) ---------- */
+  { c:'work', page:'my_day', target:'task-header', action:'open-task',
+    en:[`Inside a task`, `Tapping a card opens the task: code, status, type and location on top, then the assignees (✓ = already submitted), the dates or planned duration and the admin notes. The tour opened one of your tasks as an example — nothing changes while you look.`],
+    ar:[`داخل المهمة`, `عند فتح المهمة يظهر في أعلاها الكود والحالة والنوع والموقع، ثم المسؤولون (علامة ✓ تعني أنه سلّم نصيبه) والتاريخ أو المدة المخططة وملاحظات الإدارة. فتحت لك الجولة إحدى مهامك كمثال، ولن يتغير أي شيء أثناء الجولة.`] },
+  { c:'work', page:'my_day', target:'task-subtasks', action:'open-task',
+    en:[`Tick the items`, `Tick each item as soon as it is done; the counter shows done / total. Management can press "Edit items" to change this task's checklist.`],
+    ar:[`تنفيذ البنود`, `علّم على كل بند فور إنجازه، والعداد يوضح المنجز من الإجمالي. ويمكن للإدارة الضغط على «تعديل البنود» لتغيير قائمة بنود هذه المهمة.`] },
+  { c:'work', page:'my_day', target:'task-notes', action:'open-task',
+    en:[`Notes and extra work`, `If any item stays unticked, a note explaining why becomes mandatory before you can submit. Record anything you did beyond the list under "Extra work".`],
+    ar:[`الملاحظات والعمل الإضافي`, `إذا بقي أي بند بدون علامة يصبح كتابة السبب في الملاحظات إجبارياً قبل التسليم، وسجّل أي عمل تم خارج القائمة في خانة «عمل إضافي».`] },
+  { c:'work', page:'my_day', target:'task-attachments', action:'open-task',
+    en:[`Photos, videos and voice notes`, `Attach before/after photos and videos (videos up to 50 MB; photos are compressed automatically) or record a voice note. Attachments are deleted automatically after 3 months.`],
+    ar:[`الصور والفيديو والتسجيل الصوتي`, `أرفق صور وفيديوهات قبل العمل وبعده (الفيديو حتى 50 ميجا والصور تُضغط تلقائياً) أو سجّل رسالة صوتية. المرفقات تُحذف تلقائياً بعد 3 أشهر.`] },
+  { c:'work', page:'my_day', target:'task-comments', action:'open-task',
+    en:[`Comments`, `Management writes comments and instructions here; everyone on the task can read them with the author, role and time.`],
+    ar:[`التعليقات`, `تكتب الإدارة هنا تعليقاتها وتوجيهاتها، ويقرؤها كل من على المهمة مع اسم الكاتب ودوره ووقت التعليق.`] },
+  { c:'work', page:'my_day', target:'task-submit', action:'open-task',
+    en:[`Final confirmation and submit`, `"Save progress" keeps your ticks without submitting. To submit, tick "Final confirmation" (you are 100% sure of what you ticked) and press "Submit my part". After that you cannot change it unless management reopens the task.`],
+    ar:[`التأكيد النهائي والتسليم`, `«حفظ التقدم» يحفظ علاماتك بدون تسليم. وللتسليم علّم على «التأكيد النهائي» (أنك متأكد 100% مما علّمت عليه) ثم اضغط «تسليم نصيبي من المهمة»، وبعدها لا يمكنك التعديل إلا إذا أعادت الإدارة فتح المهمة.`] },
+  { c:'work', page:'my_day', target:'myday-confirm',
+    en:[`Everyone must confirm`, `A task with several assignees counts as delivered only when every one of them submits. If your colleagues confirmed and you have not, it appears under "Waiting for your confirmation" with a counter like "confirmed 2/3".`],
+    ar:[`تأكيد كل المسؤولين`, `المهمة الجماعية لا تُعتبر مُسلَّمة إلا بعد أن يسلّم كل المسؤولين نصيبهم. إذا أكّد زملاؤك ولم تؤكد أنت، تظهر المهمة في قسم «بانتظار تأكيدك» مع عداد مثل «أكّد 2/3».`] },
+
+  /* ---------- Review and completion ---------- */
+  { c:'review', page:'all_tasks', target:'task-switch', action:'open-task',
+    en:[`Management: acting for an assignee`, `Managers can switch between the assignees to see or correct each person's progress, and submit a share on someone's behalf when needed.`],
+    ar:[`للإدارة: التعديل نيابةً عن الموظف`, `يمكن للإدارة التنقل بين المسؤولين لعرض أو تصحيح تقدم كل شخص، وتسليم نصيبه نيابةً عنه عند الحاجة.`] },
+  { c:'review', page:'all_tasks', target:'task-admin-review', action:'open-task',
+    en:[`Step 1: Admin review`, `When every assignee has submitted, the task waits for "Admin review". An admin, accountant, operations manager or CEO clicks this box to sign it off, and the task moves to the senior review queue.`],
+    ar:[`المرحلة الأولى: مراجعة الإدارة`, `بعد أن يسلّم كل المسؤولين تنتظر المهمة «مراجعة الإدارة»؛ يضغط المدير أو المحاسب أو مسؤول العمليات أو الرئيس التنفيذي على هذا المربع للاعتماد، فتنتقل المهمة إلى قائمة المراجعة العليا.`] },
+  { c:'review', page:'all_tasks', target:'task-senior-review', action:'open-task',
+    en:[`Step 2: Senior review`, `The operations manager (مسؤول العمليات) or the CEO gives the final "Senior review" and the task becomes "Approved". It also records the admin review if missing, and seniors may close a task an assignee never confirmed — the audit trail names who had not.`],
+    ar:[`المرحلة الثانية: المراجعة العليا`, `يعطي مسؤول العمليات أو الرئيس التنفيذي «المراجعة العليا» فتصبح المهمة «معتمدة نهائياً». وهي تسجّل مراجعة الإدارة تلقائياً إن لم تكن تمت، ويمكن لهما إغلاق مهمة لم يؤكدها أحد المسؤولين مع تسجيل اسمه في سجل التدقيق.`] },
+  { c:'review', page:'all_tasks', target:'task-complete', action:'open-task',
+    en:[`Mission complete`, `"Done" (تم الإنجاز) records the actual completion date and duration against the plan. It counts as the admin review; pressed by the CEO it closes the senior review too. Admins use it after everyone confirmed; the operations manager and CEO at any time.`],
+    ar:[`إنجاز المهمة`, `زر «تم الإنجاز» يسجّل تاريخ الإنجاز الفعلي والمدة مقارنة بالمخطط، ويُحتسب كمراجعة الإدارة، وإذا ضغطه الرئيس التنفيذي تُغلق المراجعة العليا أيضاً. تستخدمه الإدارة بعد تأكيد الجميع، ومسؤول العمليات والرئيس التنفيذي في أي وقت.`] },
+  { c:'review', page:'all_tasks', target:'task-actions', action:'open-task',
+    en:[`Edit, reopen, delete, audit trail`, `"Reopen" (management) cancels the submissions and reviews so work continues — reopens count in the KPIs. "Edit" and "Delete" belong to the operations manager and CEO; changing dates needs the reschedule permission. Every action is logged in the task's audit trail at the bottom.`],
+    ar:[`تعديل وإعادة فتح وحذف وسجل التدقيق`, `«إعادة فتح» (للإدارة) تلغي التسليمات والمراجعات لاستكمال العمل، وتُحتسب في مؤشرات الأداء. «تعديل» و«حذف» لمسؤول العمليات والرئيس التنفيذي، وتغيير المواعيد يحتاج صلاحية تعديل المواعيد. وكل إجراء مسجّل في «سجل التدقيق» أسفل المهمة.`] },
+  { c:'review', page:'alerts', target:'alerts-page',
+    en:[`Alerts`, `Three queues in one place: late tasks, tasks awaiting admin review and tasks awaiting senior review. Clear them daily — review speed is scored in the supervision KPIs.`],
+    ar:[`التنبيهات`, `ثلاث قوائم في مكان واحد: المهام المتأخرة، والمهام بانتظار مراجعة الإدارة، والمهام بانتظار المراجعة العليا. أنهِها يومياً، فسرعة المراجعة تُقاس في مؤشرات الإشراف.`] },
+
+  /* ---------- Planning and meetings ---------- */
+  { c:'plan', page:'weekly_planner', target:'week-grid',
+    en:[`Weekly planner`, `The week from Saturday to Friday with every open task on each day it covers. Tap a task to open it.`],
+    ar:[`مخطط الأسبوع`, `يعرض الأسبوع من السبت إلى الجمعة وكل مهمة مفتوحة في الأيام التي تغطيها. اضغط على أي مهمة لفتحها.`] },
+  { c:'plan', page:'weekly_planner', target:'week-nav',
+    en:[`Moving tasks between days`, `Change week with the arrows and "Today". Whoever has the reschedule permission (the CEO, or someone the CEO enabled) drags a task to another day; its whole date range shifts and the move is logged. Late tasks from earlier weeks sit in a red row on top.`],
+    ar:[`نقل المهام بين الأيام`, `تنقّل بين الأسابيع بالأسهم وزر «اليوم». من لديه صلاحية تعديل المواعيد (الرئيس التنفيذي أو من يمنحه الصلاحية) يسحب المهمة إلى يوم آخر فتتحرك مدتها كاملة ويُسجَّل النقل. والمهام المتأخرة من أسابيع سابقة تظهر في صف أحمر بالأعلى.`] },
+  { c:'plan', page:'meetings', target:'meet-form', action:'open-meeting-form',
+    en:[`Meetings`, `"New meeting" records a meeting: title and date (required), time, place, agenda and the attendees ticked from the team. Nothing is saved until "Save".`],
+    ar:[`الاجتماعات`, `زر «اجتماع جديد» يسجّل الاجتماع: العنوان والتاريخ (إلزاميان) والوقت والمكان وجدول الأعمال والحضور من قائمة الفريق. لا يُحفظ شيء إلا بعد الضغط على «حفظ».`] },
+  { c:'plan', page:'meetings', target:'meet-notes', action:'open-meeting',
+    en:[`Minutes`, `Open a meeting to read its agenda and add minutes; each note carries its author, role and time. Print it from the same window. Only the operations manager and CEO can delete meetings.`],
+    ar:[`محضر الاجتماع`, `افتح الاجتماع لقراءة جدول الأعمال وإضافة ملاحظات المحضر، وكل ملاحظة مسجلة باسم كاتبها ودوره ووقتها. يمكن طباعته من نفس النافذة، والحذف لمسؤول العمليات والرئيس التنفيذي فقط.`] },
+
+  /* ---------- Estimates (مقايسات) ---------- */
+  { c:'inv', page:'invoices', target:'inv-filter',
+    en:[`Estimates`, `An estimate prices the work on a unit: "preliminary" before the work, "final" after it. Filter by kind. Each card shows the total and four approval pills — Admin, Accounting, Operations, CEO — with ✓ when approved and ⌛ while waiting.`],
+    ar:[`المقايسات`, `المقايسة هي تسعير الأعمال على وحدة: «مبدئية» قبل التنفيذ و«نهائية» بعده، واستخدم الفلتر للتنقل بينهما. كل كارت يعرض الإجمالي وأربع شارات اعتماد — إدارة، حسابات، العمليات، CEO — بعلامة ✓ بعد الاعتماد و⌛ أثناء الانتظار.`] },
+  { c:'inv', page:'invoices', target:'inv-form', action:'open-invoice-form',
+    en:[`Creating an estimate`, `"New estimate" is open to every role. Choose the unit, write the client's name and phone and a description, then add items with quantity and unit price; line totals, subtotal, discount (with its reason) and the final total in EGP are calculated for you.`],
+    ar:[`إنشاء مقايسة`, `زر «مقايسة جديدة» متاح لكل الأدوار. اختر الوحدة واكتب اسم العميل وهاتفه والوصف، ثم أضف البنود بالكمية وسعر الوحدة، ويحسب النظام إجمالي كل بند والمجموع والخصم مع سببه والإجمالي النهائي بالجنيه.`] },
+  { c:'inv', page:'invoices', target:'inv-version', action:'open-invoice-form',
+    en:[`Preliminary or final`, `Always start with a preliminary estimate. A final estimate can only be created linked to a preliminary one for the same unit that has all four approvals. Management can edit estimates; only the CEO can delete them.`],
+    ar:[`مبدئية أم نهائية`, `ابدأ دائماً بمقايسة مبدئية. المقايسة النهائية لا تُنشأ إلا مرتبطة بمقايسة مبدئية لنفس الوحدة ومعتمدة من المستويات الأربعة. التعديل للإدارة، والحذف للرئيس التنفيذي فقط.`] },
+  { c:'inv', page:'invoices', target:'inv-gates', action:'open-invoice',
+    en:[`The four approvals`, `In order: 1) Admin (admin, operations manager or CEO) → 2) Accounting (accountant, operations manager or CEO) → 3) Operations manager (or CEO) → 4) CEO final approval. Each button appears only to the right role once the previous step is done.`],
+    ar:[`مسار الاعتماد الرباعي`, `بالترتيب: 1) الإدارة (المدير أو مسؤول العمليات أو الرئيس التنفيذي) ← 2) الحسابات (المحاسب أو مسؤول العمليات أو الرئيس التنفيذي) ← 3) مسؤول العمليات (أو الرئيس التنفيذي) ← 4) الاعتماد النهائي من الرئيس التنفيذي. يظهر زر الاعتماد للدور المناسب فقط بعد اكتمال المرحلة السابقة.`] },
+  { c:'inv', page:'invoices', target:'gate-ceo', action:'open-invoice',
+    en:[`Fully approved, print`, `After the CEO's approval the estimate is "Fully approved" and the approvals are printed on it; a preliminary one can now get its final estimate. "Print" gives an A4 estimate with the logo and signature lines.`],
+    ar:[`اعتماد كامل وطباعة`, `بعد اعتماد الرئيس التنفيذي تصبح المقايسة «معتمدة بالكامل» وتُطبع الاعتمادات عليها، وإذا كانت مبدئية يمكن الآن إنشاء النهائية المرتبطة بها. زر «طباعة» يخرجها على ورق A4 بالشعار وخانات التوقيع.`] },
+  { c:'inv', page:'invoices', target:'inv-compare', action:'open-invoice-compare',
+    en:[`Preliminary vs final`, `From a final estimate, "Compare with preliminary" shows both side by side: the two totals, the difference in EGP and in %, and both item lists. The average difference feeds the "Estimate accuracy" KPI.`],
+    ar:[`مقارنة المبدئية والنهائية`, `من المقايسة النهائية يعرض زر «قارن مع المبدئية» المقايستين جنباً إلى جنب: الإجماليين والفرق بالجنيه وبالنسبة المئوية وبنود كل منهما، ومتوسط الفرق يدخل في مؤشر «دقة المقايسات».`] },
+
+  /* ---------- KPIs, reports and audit ---------- */
+  { c:'perf', page:'kpi', target:'kpi-period',
+    en:[`Performance KPIs`, `Choose a period (last week, month, 3 months, year) or exact dates, and the whole team or one person. Tasks assigned only to the CEO are not counted.`],
+    ar:[`مؤشرات الأداء`, `اختر الفترة (آخر أسبوع، شهر، 3 أشهر، سنة) أو تواريخ محددة، وكل الفريق أو شخصاً واحداً. المهام المسندة للرئيس التنفيذي وحده لا تدخل في الحساب.`] },
+  { c:'perf', page:'kpi', target:'kpi-overall',
+    en:[`Headline numbers`, `Completion rate, late tasks, number of reopens and estimate accuracy (average gap between preliminary and final) for the chosen period.`],
+    ar:[`المؤشرات الرئيسية`, `معدل الإنجاز، والمهام المتأخرة، وعدد مرات إعادة فتح المهام، ودقة المقايسات (متوسط الفرق بين المبدئية والنهائية) خلال الفترة المختارة.`] },
+  { c:'perf', page:'kpi', target:'kpi-employees',
+    en:[`Per employee`, `For each person: completion rate, on-time rate, average actual duration and its gap from the plan, and an overall score out of 100 (the average of completion and on-time).`],
+    ar:[`أداء كل موظف`, `لكل شخص: معدل الإنجاز، ونسبة الإنجاز في الموعد، ومتوسط المدة الفعلية وفرقها عن المخطط، وتقييم عام من 100 (متوسط الإنجاز والالتزام بالموعد).`] },
+  { c:'perf', page:'kpi', target:'kpi-supervision',
+    en:[`Supervision KPIs`, `How fast reviews happen: a review on the day of delivery scores 100 and every day of delay costs 20 (5 days = 0). Pending reviews count against the responsible role and get worse daily; the most delayed tasks are listed per reviewer.`],
+    ar:[`مؤشرات الإشراف والمراجعة`, `تقيس سرعة المراجعة: المراجعة في نفس يوم التسليم = 100 نقطة وكل يوم تأخير يخصم 20 (5 أيام = صفر). المراجعات المعلّقة تُحتسب على صاحب الدور وتسوء يومياً، وتظهر أكثر المهام تأخيراً لكل مراجع.`] },
+  { c:'perf', page:'reports', target:'rep-filters',
+    en:[`Reports`, `Pick today, a week, a month, 3 months or exact dates, and all / completed only / late only. The table lists dates, type, location, assignees, planned vs actual days, progress and status; "Print" gives a clean A4 report with the logo.`],
+    ar:[`التقارير`, `اختر اليوم أو أسبوعاً أو شهراً أو 3 أشهر أو تواريخ محددة، ونوع التقرير: الكل أو المكتملة أو المتأخرة. الجدول يعرض التاريخ والنوع والموقع والمسؤولين والمدة المخططة والفعلية والتقدم والحالة، وزر «طباعة» يخرج تقريراً منسقاً على A4 بالشعار.`] },
+  { c:'perf', page:'audit', target:'audit-list',
+    en:[`Audit log`, `For the operations manager and CEO: the latest 200 events across all tasks, attachments and comments — who did what, and when.`],
+    ar:[`سجل التدقيق`, `لمسؤول العمليات والرئيس التنفيذي: آخر 200 حدث على كل المهام والمرفقات والتعليقات، بمن قام بالإجراء ومتى.`] },
+
+  /* ---------- Settings and accounts ---------- */
+  { c:'settings', page:'settings', target:'set-task-types', action:'settings-task-types',
+    en:[`Settings: task types`, `Admins, the operations manager and the CEO maintain the base lists here. A task type holds the default checklist every new task of that type starts with.`],
+    ar:[`الإعدادات: أنواع المهام`, `يدير المدير ومسؤول العمليات والرئيس التنفيذي القوائم الأساسية من هنا. نوع المهمة يحمل قائمة البنود الافتراضية التي تبدأ بها كل مهمة جديدة من هذا النوع.`] },
+  { c:'settings', page:'settings', target:'set-properties', action:'settings-properties',
+    en:[`Units and stores`, `"Units" is the list of property units used in tasks and estimates; "Stores" holds the stores and their locations used by store tasks and transfers. Add, rename or delete entries here.`],
+    ar:[`الوحدات والمخازن`, `تبويب «الوحدات» يضم الوحدات العقارية المستخدمة في المهام والمقايسات، وتبويب «المخازن» يضم المخازن ومواقعها المستخدمة في مهام المخازن وعمليات النقل. أضف أو عدّل أو احذف من هنا.`] },
+  { c:'settings', page:'settings', target:'set-users', action:'settings-users',
+    en:[`Users (CEO only)`, `The CEO edits names, usernames and roles, and turns the "Reschedule" permission on or off for admins and the operations manager. New accounts and passwords are created in the HR system.`],
+    ar:[`المستخدمون (للرئيس التنفيذي فقط)`, `يعدّل الرئيس التنفيذي الأسماء وأسماء المستخدمين والأدوار، ويفعّل أو يوقف صلاحية «تعديل المواعيد» للمديرين ومسؤول العمليات. الحسابات الجديدة وكلمات المرور تُنشأ من نظام الموارد البشرية.`] },
+  { c:'settings', page:'credentials', target:'cred-table',
+    en:[`Login details (CEO)`, `Every user with username, role and whether the account is active. One username and password work in all Home Vacation systems; passwords and system access are managed in HR.`],
+    ar:[`بيانات الدخول`, `قائمة بكل المستخدمين واسم المستخدم والدور وحالة الحساب. لكل موظف اسم مستخدم وكلمة مرور واحدة لكل أنظمة هوم فاكيشن، وتُدار كلمات المرور والأنظمة المسموحة من الموارد البشرية.`] },
+
+  /* ---------- Roles and other systems ---------- */
+  { c:'roles', target:'profile', action:'open-menu',
+    en:[`Employee (موظف)`, `Your name and role are shown here; the role decides your pages and buttons. An employee sees My Day, My tasks and Estimates, works on assigned tasks (items, attachments, notes, submit) and can create estimates, but does not create or review tasks.`],
+    ar:[`الموظف`, `يظهر هنا اسمك ودورك، والدور يحدد صفحاتك وأزرارك. الموظف يرى «يومي» و«مهامي» و«المقايسات»، وينفذ المهام المسندة إليه (البنود والمرفقات والملاحظات والتسليم)، ويمكنه إنشاء مقايسة، لكنه لا ينشئ مهاماً ولا يراجعها.`] },
+  { c:'roles', target:null,
+    en:[`Admin (مدير) and accountant (محاسب)`, `Both create and assign tasks, see team tasks, the planner, meetings, KPIs, reports and alerts, give the admin review, mark tasks done and reopen them. The admin also approves estimates at step 1 and opens Settings; the accountant confirms accounting at step 2.`],
+    ar:[`المدير والمحاسب`, `كلاهما ينشئ المهام ويسندها، ويرى مهام الفريق والمخطط والاجتماعات والمؤشرات والتقارير والتنبيهات، ويعطي مراجعة الإدارة ويسجل الإنجاز ويعيد فتح المهام. المدير يعتمد المقايسات في المرحلة 1 ويدخل الإعدادات، والمحاسب يؤكد الحسابات في المرحلة 2.`] },
+  { c:'roles', target:null,
+    en:[`Operations manager (مسؤول العمليات) and CEO`, `Both give the senior review, edit and delete tasks and meetings, and see the audit log. The operations manager approves estimates at step 3; the CEO gives the final approval, manages users and login details, grants the reschedule permission and can move any task.`],
+    ar:[`مسؤول العمليات والرئيس التنفيذي`, `كلاهما يعطي المراجعة العليا ويعدّل ويحذف المهام والاجتماعات ويرى سجل التدقيق. مسؤول العمليات يعتمد المقايسات في المرحلة 3، والرئيس التنفيذي يعطي الاعتماد النهائي ويدير المستخدمين وبيانات الدخول ويمنح صلاحية تعديل المواعيد ويستطيع نقل أي مهمة.`] },
+  { c:'roles', target:'systems', action:'open-menu',
+    en:[`Other Home Vacation systems`, `Under "Other systems" you find HR & payroll, the property CRM, HV Ops and HV Finance — only the systems ticked for your account in HR. The same username and password work everywhere.`],
+    ar:[`الأنظمة الأخرى`, `تحت «الأنظمة الأخرى» تجد الموارد البشرية والرواتب، وإدارة العقارات (CRM)، والتسويق وإدخال البيانات (HV Ops)، والحسابات والمالية (HV Finance) — فقط الأنظمة المفعّلة لحسابك من الموارد البشرية، وبنفس اسم المستخدم وكلمة المرور.`] },
+  { c:'roles', target:null,
+    en:[`You are ready`, `Press the "Tour" button any time: "Explain this page" explains the screen you are on, "Full tour" repeats everything, and "Guide" lists every chapter.`],
+    ar:[`أنت جاهز`, `اضغط زر «جولة» في أي وقت: «اشرح هذه الصفحة» يشرح الشاشة الحالية، و«الجولة الكاملة» تعيد كل شيء، و«الدليل» يعرض كل الفصول.`] },
+];
+/* HV-TOUR-STEPS-END */
 
 // ==================== APP ROOT ====================
 const App = () => {
@@ -4524,6 +4797,51 @@ const App = () => {
     return late + mine;
   }, [data.tasks, currentUser, today]);
   
+  /* HV tour (shared engine https://hv-shared.pages.dev/hv-tour.js). The callbacks read live state through this ref.
+     The app works normally when the script does not load: everything is guarded by window.HVTour. */
+  const tourRef = useRef({});
+  tourRef.current = { user: currentUser, page: currentPage, setPage: setCurrentPage, needsConfig };
+  useEffect(() => {
+    /* The script tag is async (a slow/unreachable host must never delay the app), so init on its load event,
+       with a 1 s poll as fallback that gives up quietly after ~60 s. The poll also picks up the spare copy
+       (hvshared-home-vacation.pages.dev) that the tag's onerror loads when hv-shared.pages.dev is unreachable. */
+    let timer = null, tries = 0, started = false;
+    const tag = document.getElementById('hv-tour-js');
+    const boot = () => {
+      if (started) return;
+      if (window.HVTour && typeof window.HVTour.init === 'function') {
+        started = true; clearTimeout(timer);
+        try {
+          window.HVTour.init({
+            app: 'maint', color: '#1B5E6F',
+            userId: () => (tourRef.current.user && tourRef.current.user.id) || null,
+            lang: () => 'ar',
+            getPage: () => tourRef.current.page,
+            goPage: (k) => tourRef.current.setPage(k),
+            chapters: HV_TOUR_CHAPTERS, steps: HV_TOUR_STEPS,
+            /* phones: modals are bottom sheets with a sticky ~90px action bar and toasts sit at the bottom, so the button stays above both */
+            bottomOffset: { mobile: 96, desktop: 24 },
+            hidden: () => !!tourRef.current.needsConfig,
+          });
+        } catch (e) { console.warn('HV tour init failed', e); }
+      }
+    };
+    const poll = () => { boot(); if (!started && tries++ < 60) timer = setTimeout(poll, 1000); };
+    if (tag) tag.addEventListener('load', boot);
+    poll();
+    return () => { clearTimeout(timer); if (tag) tag.removeEventListener('load', boot); };
+  }, []);
+  /* HV tour: menu steps open the phone drawer ('open-menu'); every step change / the end of the tour closes it ('close') */
+  useEffect(() => {
+    const onTour = (e) => {
+      const a = e && e.detail && e.detail.action;
+      if (a === 'open-menu') setMobileMenuOpen(true);
+      else if (a === 'close') setMobileMenuOpen(false);
+    };
+    window.addEventListener('hv-tour', onTour);
+    return () => window.removeEventListener('hv-tour', onTour);
+  }, []);
+
   // Page routing
   const renderPage = () => {
     const props = { data, currentUser, onUpdateTask:updateTask, onAddComment:addComment, onReloadAttachments:reloadAttachments, onDeleteTask:deleteTask, showToast, setCurrentPage };
