@@ -1066,7 +1066,7 @@ const LoginPage = ({ onLogin, onReconfig }) => {
             <p className="text-white/80 leading-relaxed">منصة احترافية لإدارة عمليات الصيانة، التشطيب، المخزون، والمقايسات.</p>
             <div className="mt-6"><span className="live-indicator"><span className="live-dot"></span> متصل بقاعدة البيانات</span></div>
           </div>
-          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 7.5</div>
+          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 7.6</div>
         </div>
         <div className="p-8 lg:p-12 flex flex-col justify-center">
           <div className="lg:hidden mb-8"><HVLogo size="md"/></div>
@@ -1133,7 +1133,14 @@ const HV_SYSTEMS = [
 /* red counters of what is waiting in each Home Vacation system — public.hv_alert_counts() via HVCore.watchAlerts */
 const useHvAlerts = (uid) => {
   const [a, setA] = useState(null);
-  useEffect(() => { if (!uid || !window.HVCore || !HVCore.watchAlerts) return; return HVCore.watchAlerts(supabaseClient, setA); }, [uid]);
+  useEffect(() => {
+    if (!uid) return;
+    if (window.HVCore && HVCore.watchAlerts) return HVCore.watchAlerts(supabaseClient, setA);
+    // older saved copy of hv-core.js: poll directly
+    let alive = true; const run = () => { try { supabaseClient.rpc('hv_alert_counts').then(({ data }) => { if (alive && data && typeof data === 'object') setA(data); }).catch(() => {}); } catch (e) {} };
+    run(); const tm = setInterval(run, 60000);
+    return () => { alive = false; clearInterval(tm); };
+  }, [uid]);
   return a;
 };
 const hvN = (a, k) => (window.HVCore && HVCore.alertN ? HVCore.alertN(a, k) : 0);
