@@ -1066,7 +1066,7 @@ const LoginPage = ({ onLogin, onReconfig }) => {
             <p className="text-white/80 leading-relaxed">منصة احترافية لإدارة عمليات الصيانة، التشطيب، المخزون، والمقايسات.</p>
             <div className="mt-6"><span className="live-indicator"><span className="live-dot"></span> متصل بقاعدة البيانات</span></div>
           </div>
-          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 7.4</div>
+          <div className="text-white/60 text-sm">© 2026 Home Vacation • الإصدار 7.5</div>
         </div>
         <div className="p-8 lg:p-12 flex flex-col justify-center">
           <div className="lg:hidden mb-8"><HVLogo size="md"/></div>
@@ -1130,14 +1130,24 @@ const HV_SYSTEMS = [
   { key:'ops',  icon:'📋', label:'التسويق وإدخال البيانات (HV Ops)', url:'https://home-vacation-ops.pages.dev' },
   { key:'fin',  icon:'💰', label:'الحسابات والمالية (HV Finance)', url:'https://home-vacation-finance.pages.dev' },
 ];
+/* red counters of what is waiting in each Home Vacation system — public.hv_alert_counts() via HVCore.watchAlerts */
+const useHvAlerts = (uid) => {
+  const [a, setA] = useState(null);
+  useEffect(() => { if (!uid || !window.HVCore || !HVCore.watchAlerts) return; return HVCore.watchAlerts(supabaseClient, setA); }, [uid]);
+  return a;
+};
+const hvN = (a, k) => (window.HVCore && HVCore.alertN ? HVCore.alertN(a, k) : 0);
+const hvTitle = (a, k, ar) => (window.HVCore && HVCore.alertTitle ? HVCore.alertTitle(a, k, ar) : '');
 const OtherSystems = ({ uid }) => {
   const access = useMySystems(uid);
+  const alerts = useHvAlerts(uid);
   const items = HV_SYSTEMS.filter(x => access && access[x.key]);
   if (items.length === 0) return null;
+  const total = items.reduce((s, x) => s + hvN(alerts, x.key), 0);
   return (
     <div className="mb-3" data-tour="systems">
-      <div className="text-[10px] font-bold tracking-wider mb-1 mr-1" style={{color:'var(--hv-muted)'}}>الأنظمة الأخرى</div>
-      {items.map(x => <a key={x.key} href={x.url} target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>{x.icon} <span className="flex-1">{x.label}</span></a>)}
+      <div className="text-[10px] font-bold tracking-wider mb-1 mr-1 flex items-center" style={{color:'var(--hv-muted)'}}>الأنظمة الأخرى{total > 0 && <span title={'ما ينتظرك في الأنظمة الأخرى'} style={{ display: 'inline-flex', minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9, background: '#e11d48', color: '#fff', fontSize: 11, fontWeight: 700, alignItems: 'center', justifyContent: 'center', lineHeight: 1, marginInlineStart: 6, flexShrink: 0 }}>{total}</span>}</div>
+      {items.map(x => <a key={x.key} href={x.url} target="_blank" rel="noreferrer" className="nav-item w-full" style={{textDecoration:'none'}}>{x.icon} <span className="flex-1">{x.label}</span>{hvN(alerts, x.key) > 0 && <span title={hvTitle(alerts, x.key, true)} style={{ display: 'inline-flex', minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9, background: '#e11d48', color: '#fff', fontSize: 11, fontWeight: 700, alignItems: 'center', justifyContent: 'center', lineHeight: 1, marginInlineStart: 6, flexShrink: 0 }}>{hvN(alerts, x.key)}</span>}</a>)}
     </div>
   );
 };
